@@ -1679,6 +1679,7 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                 # Make a dummy surf_reflect array so that the numba gods are happy in the toon functions 
                 else:
                     surf_reflect = np.full_like(wl, -1) 
+                    surf_reflect_array = []
             
 
             # Running POSEIDON on the GPU
