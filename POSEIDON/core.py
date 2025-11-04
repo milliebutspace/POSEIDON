@@ -1889,6 +1889,15 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                                                                 surface_component_percentages,
                                                                 surface_percentage_apply_to
                                                                 )
+            
+            # For photospheric calculations
+            # If only reflection is true, the function above does not return tau, 
+            # Which for the thermal function is just the following
+            if (thermal == False) and (thermal_scattering == False):
+                if disable_atmosphere != True:
+                    dtau = dtau_tot 
+                else:
+                    dtau = 0
 
                     
         # Calculate effective photosphere radius at tau = 2/3
