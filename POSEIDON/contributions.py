@@ -589,7 +589,8 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
     PT_dim = model['PT_dim']
     X_dim = model['X_dim']
     cloud_dim = model['cloud_dim']
-    scattering = model['scattering']
+    thermal = model['thermal']
+    thermal_scattering = model['thermal_scattering']
     reflection = model['reflection']
     lognormal_logwidth_free = model['lognormal_logwidth_free']
 
@@ -658,7 +659,7 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
     P_cloud_bottom = atmosphere['P_cloud_bottom']
     log_r_m_std_dev = atmosphere['log_r_m_std_dev']
 
-    if (scattering == True) or (reflection == True):
+    if (thermal_scattering == True) or (reflection == True):
         print('Contribution functions are largely untested for scattering and reflection. Bugs ahead... reach out to Elijah Mullens if you see any that need squashed.')
         if (len(aerosol_species)>=2):
             raise Exception('Cannot do more than one aerosol species when scattering or reflection is True. If you need this, reach out to Elijah Mullens.')
@@ -951,7 +952,7 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
         dtau_tot = np.ascontiguousarray(kappa_tot * dz.reshape((len(P), 1)))
 
         # Without scattering, compute single steam radiative transfer
-        if (scattering == False):
+        if (thermal_scattering == False):
 
             # Compute planet flux (on CPU or GPU)
             if (device == 'cpu'):
@@ -959,7 +960,7 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
             elif (device == 'gpu'):
                 F_p, dtau = emission_single_stream_GPU(T, dz, wl, kappa_tot, Gauss_quad)
 
-        elif (scattering == True):
+        elif (thermal_scattering == True):
             
             # Quick Fix for POSEIDON V1.3.1. new toon functions
             if len(aerosol_species) == 1 or len(aerosol_species) == 0:
@@ -1165,7 +1166,7 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
             dtau_tot = np.ascontiguousarray(kappa_tot * dz.reshape((len(P), 1)))
 
             # Without scattering, compute single steam radiative transfer
-            if (scattering == False):
+            if (thermal_scattering == False):
 
                 # Compute planet flux (on CPU or GPU)
                 if (device == 'cpu'):
@@ -1173,7 +1174,7 @@ def spectral_contribution(planet, star, model, atmosphere, opac, wl,
                 elif (device == 'gpu'):
                     F_p, dtau = emission_single_stream_GPU(T, dz, wl, kappa_tot, Gauss_quad)
 
-            elif (scattering == True):
+            elif (thermal_scattering == True):
 
                 # Quick Fix for POSEIDON V1.3.1. new toon functions
                 if len(aerosol_species) == 1 or len(aerosol_species) == 0:
@@ -2071,7 +2072,8 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
     PT_dim = model['PT_dim']
     X_dim = model['X_dim']
     cloud_dim = model['cloud_dim']
-    scattering = model['scattering']
+    thermal = model['thermal']
+    thermal_scattering = model['thermal_scattering']
     reflection = model['reflection']
     lognormal_logwidth_free = model['lognormal_logwidth_free']
 
@@ -2139,7 +2141,7 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
     P_cloud_bottom = atmosphere['P_cloud_bottom']
     log_r_m_std_dev = atmosphere['log_r_m_std_dev']
 
-    if (scattering == True) or (reflection == True):
+    if (thermal_scattering == True) or (reflection == True):
         if (len(aerosol_species)>=2):
             raise Exception('Cannot do more than one aerosol species when scattering or reflection is True. If you need this, reach out to Elijah Mullens.')
 
@@ -2454,7 +2456,7 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
         dtau_tot = np.ascontiguousarray(kappa_tot * dz.reshape((len(P), 1)))
 
         # Without scattering, compute single steam radiative transfer
-        if (scattering == False):
+        if (thermal_scattering == False):
 
             # Compute planet flux (on CPU or GPU)
             if (device == 'cpu'):
@@ -2462,7 +2464,7 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
             elif (device == 'gpu'):
                 F_p, dtau = emission_single_stream_GPU(T, dz, wl, kappa_tot, Gauss_quad)
 
-        elif (scattering == True):
+        elif (thermal_scattering == True):
 
             # Quick Fix for POSEIDON V1.3.1. new toon functions
             if len(aerosol_species) == 1 or len(aerosol_species) == 0:
@@ -2666,7 +2668,7 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
             dtau_tot = np.ascontiguousarray(kappa_tot * dz.reshape((len(P), 1)))
 
             # Without scattering, compute single steam radiative transfer
-            if (scattering == False):
+            if (thermal_scattering == False):
 
                 # Compute planet flux (on CPU or GPU)
                 if (device == 'cpu'):
@@ -2674,7 +2676,7 @@ def pressure_contribution_compute_spectrum(planet, star, model, atmosphere, opac
                 elif (device == 'gpu'):
                     F_p, dtau = emission_single_stream_GPU(T, dz, wl, kappa_tot, Gauss_quad)
 
-            elif (scattering == True):
+            elif (thermal_scattering == True):
 
                 # Quick Fix for POSEIDON V1.3.1. new toon functions
                 if len(aerosol_species) == 1 or len(aerosol_species) == 0:
@@ -2953,7 +2955,7 @@ def pressure_contribution(planet, star, model, atmosphere, opac, wl,
     '''
 
     # Warning statement 
-    if (model['scattering'] == True) or (model['reflection'] == True):
+    if (model['thermal_scattering'] == True) or (model['reflection'] == True):
         print('Contribution functions are largely untested for scattering and reflection. Bugs ahead... reach out to Elijah Mullens if you see any that need squashed.')
 
     bulk_species_list = model['bulk_species']
