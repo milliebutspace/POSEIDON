@@ -4983,7 +4983,7 @@ def plot_histograms(planet, models, plot_parameters,
                     two_sigma_upper_limits = [], two_sigma_lower_limits = [],
                     orientation = 'vertical', title_alpha_list = [],
                     use_parameter_color_for_title = False,
-                    title_colour_list = []):
+                    title_colour_list = [],):
     '''
     Plot a set of histograms from one or more retrievals.
 
@@ -5164,6 +5164,21 @@ def plot_histograms(planet, models, plot_parameters,
             param_names = np.array(external_param_names[m])
             samples = external_samples[m]
             N_samples = len(samples[:,0])
+
+            if ('mu' in plot_parameters) or ('mmw' in plot_parameters) or ('/' in str(plot_parameters)):
+
+                X_stored = np.zeros(shape=(N_samples, N_species))
+                mu_stored = np.zeros(shape=(N_samples))
+
+                # Load mixing ratios and mean molecular weight samples
+                for i in range(N_samples):
+
+                    atmosphere_i = get_retrieved_atmosphere(planet, model, np.logspace(np.log10(100.0), np.log10(1e-6), 100),
+                                                            specific_param_values = samples[i], R_p_ref_set=planet['planet_radius'])
+                    
+                    X_stored[i,:] = atmosphere_i['X'][:,0,0,0]
+                    mu_stored[i] = atmosphere_i['mu'][0,0,0]/sc.u
+
 
         # Create array to store parameter values for model m
         param_samples_m = np.zeros(shape=(N_samples, N_params_to_plot))
