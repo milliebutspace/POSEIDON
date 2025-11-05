@@ -785,30 +785,30 @@ def opacity_tables(rank, comm, wl_model, chemical_species, active_species,
 
                 # By default, use the new POSEIDON v1.3 opacity database
                 if (database_version == '1.3'):
-                    opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.3.hdf5', 'r')
+                    opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.3.hdf5'), 'r')
 
                 # Backwards compatibility with v1.2 database
                 elif (database_version == '1.2'):
-                    opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.2.hdf5', 'r')
+                    opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.2.hdf5'), 'r')
 
                 # Or for backwards compatibility, you can use the old v1.0 database
                 # (this file used to be called 'Opacity_database_0.01cm-1.hdf5')
                 elif (database_version == '1.0'):
-                    opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.0.hdf5', 'r')  # Original POSEIDON opac database 
+                    opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.0.hdf5'), 'r')  # Original POSEIDON opac database 
             
                 else:
                     raise Exception("Invalid opacity database version.\n"
                                     "The options are: '1.0', '1.2', or '1.3")
                 
             elif (opacity_database == 'Temperate'):   # Low T database
-                opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_0.01cm-1_Temperate.hdf5', 'r')
+                opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_0.01cm-1_Temperate.hdf5'), 'r')
 
             # Read P grid used in opacity files
             log_P_grid = np.array(opac_file['H2O/log(P)'])   # Units: log10(P/bar) - H2O choice arbitrary, all P grids are the same
             N_P = len(log_P_grid)                            # No. of pressures in opacity files
         
         # Open HDF5 files containing collision-induced absorption (CIA)
-        cia_file = h5py.File(input_file_path + '/opacity/Opacity_database_cia.hdf5', 'r')
+        cia_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_cia.hdf5'), 'r')
         
         # Initialise array of indices on pre-calculated pressure opacity grid prior to defined atmosphere layer pressures
         x = np.zeros(N_P_fine, dtype=np.int64)
@@ -1796,26 +1796,26 @@ def extinction_LBL(chemical_species, active_species, cia_pairs, ff_pairs,
 
         # By default, use the new POSEIDON v1.3 opacity database
         if (database_version == '1.3'):
-            opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.3.hdf5', 'r')
+            opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.3.hdf5'), 'r')
 
         # Backwards compatibility with v1.2 database
         elif (database_version == '1.2'):
-            opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.2.hdf5', 'r')
+            opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.2.hdf5'), 'r')
 
         # Or for backwards compatibility, you can use the old v1.0 database
         # (this file used to be called 'Opacity_database_0.01cm-1.hdf5')
         elif (database_version == '1.0'):
-            opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_v1.0.hdf5', 'r')  # Original POSEIDON opac database 
+            opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_v1.0.hdf5'), 'r')  # Original POSEIDON opac database 
     
         else:
             raise Exception("Invalid opacity database version.\n"
                             "The options are: '1.0', '1.2', or '1.3.")
 
     elif (opacity_database == 'Temperate'):   # Low T database
-        opac_file = h5py.File(input_file_path + '/opacity/Opacity_database_0.01cm-1_Temperate.hdf5', 'r')
+        opac_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_0.01cm-1_Temperate.hdf5'), 'r')
     
     # Open HDF5 files containing collision-induced absorption (CIA)
-    cia_file = h5py.File(input_file_path + '/opacity/Opacity_database_cia.hdf5', 'r')
+    cia_file = h5py.File(os.path.abspath(input_file_path + '/opacity/Opacity_database_cia.hdf5'), 'r')
 
     #***** Process collisionally Induced Absorption (CIA) *****#
      

@@ -66,6 +66,9 @@ rank = comm.Get_rank()
 block = int(os.environ["block"])
 thread = int(os.environ["thread"])
 
+# Absolute tolerance defined by the precision of floating point numbers
+atol = 10**(np.ceil(np.log10(np.finfo(float).eps)))
+
 import warnings
 
 warnings.filterwarnings("ignore")  # Suppress numba performance warning
@@ -1948,8 +1951,9 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                 F_s = star['F_star']
                 wl_s = star['wl_star']
 
-                if (np.array_equiv(wl_s, wl) is False):
-                    raise Exception("Error: wavelength grid for stellar spectrum does " +
+                # Checks if the wl grid passed the one within star object are within a specific tolerance
+                # This is needed because sometimes wl passed and star's internal wl object are copy's --> np.array_equiv returns False
+                assert np.all(np.isclose(wl_s, wl, atol=atol)), ("Error: wavelength grid for stellar spectrum does " +
                                     "not match wavelength grid of planet spectrum. " +
                                     "Did you forget to provide 'wl' to create_star?")
 
@@ -1980,9 +1984,10 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                 # Load stellar spectrum
                 F_s = star['F_star']
                 wl_s = star['wl_star']
-
-                if (np.array_equiv(wl_s, wl) is False):
-                    raise Exception("Error: wavelength grid for stellar spectrum does " +
+                
+                # Checks if the wl grid passed the one within star object are within a specific tolerance
+                # This is needed because sometimes wl passed and star's internal wl object are copy's --> np.array_equiv returns False
+                assert np.all(np.isclose(wl_s, wl, atol=atol)), ("Error: wavelength grid for stellar spectrum does " +
                                     "not match wavelength grid of planet spectrum. " +
                                     "Did you forget to provide 'wl' to create_star?")
 
@@ -2011,8 +2016,9 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                     F_s = star['F_star']
                     wl_s = star['wl_star']
 
-                    if (np.array_equiv(wl_s, wl) is False):
-                        raise Exception("Error: wavelength grid for stellar spectrum does " +
+                    # Checks if the wl grid passed the one within star object are within a specific tolerance
+                    # This is needed because sometimes wl passed and star's internal wl object are copy's --> np.array_equiv returns False
+                    assert np.all(np.isclose(wl_s, wl, atol=atol)), ("Error: wavelength grid for stellar spectrum does " +
                                         "not match wavelength grid of planet spectrum. " +
                                         "Did you forget to provide 'wl' to create_star?")
 
