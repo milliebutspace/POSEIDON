@@ -4632,8 +4632,6 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                 if use_parameter_color_for_title == True:
                     title_colour = parameter_colour_list[q]
                     constraint_colour = parameter_colour_list[q]
-                    title_colour = 'black'
-                    constraint_colour = 'dimgray'
                 elif len(title_colour_list) != 0:
                     title_colour = title_colour_list[q]
                     constraint_colour = title_colour_list[q]
