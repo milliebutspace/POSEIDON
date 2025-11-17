@@ -501,7 +501,7 @@ The current line-by-line opacity sources included in POSEIDON are summarised bel
    * - :math:`\mathrm{AlH}`
      - `AloHa <https://www.exomol.com/data/molecules/AlH/27Al-1H/AloHa/>`_
        
-       (2016-07-26)
+       (2024-03-07)
      - `Yurchenko et al. <https://ui.adsabs.harvard.edu/abs/2024MNRAS.527.9736Y/abstract>`_
 
        `(2023) <https://ui.adsabs.harvard.edu/abs/2024MNRAS.527.9736Y/abstract>`_
@@ -2001,23 +2001,15 @@ atmospheric aerosols. The database and its computation are detailed in full in
 
        `(2021) <https://ui.adsabs.harvard.edu/abs/2021MNRAS.506.1944B/abstract>`_
 
-     - `Scott & Duly (1996) (C) <https://ui.adsabs.harvard.edu/abs/1996ApJS..105..401S/abstract>`_
+     - `Jager (2003) <https://ui.adsabs.harvard.edu/abs/2003A%26A...408..193J/abstract>`_
 
-       `Draine & Lee (1984) <https://ui.adsabs.harvard.edu/abs/1984ApJ...285...89D/abstract>`_
+       :math:`\hookrightarrow` `DOCCD Link <https://www2.astro.uni-jena.de/Laboratory/OCDB/amsilicates.html>`_
 
-       `Nitsan & Shankland (1976) <https://ui.adsabs.harvard.edu/abs/1976GeoJ...45...59N/abstract>`_
+       :math:`\hspace{1.0em}` `(Mg(2)SiO(4)) <https://www2.astro.uni-jena.de/Laboratory/OCDB/amsilicates.html>`_
 
      - 0.27–30 μm
 
-     - Amorphous Forsterite Thin Film (isotropic) 
-     
-       `+` 'Astronomical' Silicate (Derived to fit observations) 
-       
-       `+` Crystalline Synthetic Forsterite (E||a + E||c)
-       
-       Refractive indices from 0.06-62 μm, interpolated to fit EGP grid (0.26-227 μm)
-       
-       Olivine
+     - Amorphous Sol Gel (synthetic, isotropic)
 
    * - :math:`\mathrm{Mg_{2}SiO4}`
      - Forsterite
@@ -4279,3 +4271,5 @@ After downloading the files, please put them in your inputs/opacity folder.
 
 Also see the updated tutorial (as of V1.3.1) to see how to make and use this database: 
 `"Making an Aerosol Database" <notebooks/aerosol_database.html>`_.
+
+
