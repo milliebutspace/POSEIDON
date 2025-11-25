@@ -713,7 +713,8 @@ def define_model(model_name, bulk_species, param_species,
                                                             fix_beta_high_res, fix_Delta_phi_high_res,
                                                             lognormal_logwidth_free,
                                                             surface_components, surface_model, 
-                                                            surface_percentage_option)
+                                                            surface_percentage_option,
+                                                            thermal,reflection)
         
     # Load in the lab data for surfaces HERE 
     if surface_model == 'lab_data':

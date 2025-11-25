@@ -22,7 +22,8 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                        fix_alpha_high_res, fix_W_conv_high_res, 
                        fix_beta_high_res, fix_Delta_phi_high_res,
                        lognormal_logwidth_free,
-                       surface_components, surface_model, surface_percentage_option):
+                       surface_components, surface_model, surface_percentage_option,
+                       thermal, reflection):
     '''
     From the user's chosen model settings, determine which free parameters
     define this POSEIDON model. The different types of free parameters are
@@ -153,6 +154,12 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
         surface_percentage_option (string):
             Will make surface percentages log or linear (log is reccomended for CLR retrievals)
             (Options: linear, log)
+        thermal (bool):
+            If true, uses a emission model (scattering determines if one-stream or two-stream)
+            Only used here for seeing if we need to set the T_surf parameter
+        reflection (bool):
+            If True, uses a two-stream multiple scattering reflection model.
+            Only used here for seeing if we need to set the T_surf parameter
 
     Returns:
         params (np.array of str):
@@ -205,27 +212,34 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
         #***** Surface parameters *****#
     
         if (surface == True):
+            
+            # If its emission or reflection, the bare rock has a surface temperature 
+            # And other parameters (like albedo)
+            # Else, for transmission its just a bare rock (no log P surf)
+            # Usually for transmission, bare rock models are used in conjunction
+            # with stellar contamination retreivals
+            if (thermal == True) or (reflection == True):
 
-            # For bare rocks, always have surface temperature as a free parameter
-            surface_params += ['T_surf']
+                # For bare rocks, always have surface temperature as a free parameter
+                surface_params += ['T_surf']
 
-            # Surface Models 
-            if (surface_model == 'constant'):
-                surface_params += ['albedo_surf']
+                # Surface Models 
+                if (surface_model == 'constant'):
+                    surface_params += ['albedo_surf']
 
-            elif (surface_model == 'lab_data'):
+                elif (surface_model == 'lab_data'):
 
-                if len(surface_components) > 1:
-                    for n in range(len(surface_components)):
-                            if (surface_percentage_option == 'linear'):
-                                surface_params += [surface_components[n] + '_percentage']
-                            elif (surface_percentage_option == 'log'):
-                                surface_params += ['log_' + surface_components[n] + '_percentage']
-                                
-            elif (surface_model == 'gray'):
-                pass
-            else:
-                raise Exception('Only suface models are gray, constant, and lab_data.')
+                    if len(surface_components) > 1:
+                        for n in range(len(surface_components)):
+                                if (surface_percentage_option == 'linear'):
+                                    surface_params += [surface_components[n] + '_percentage']
+                                elif (surface_percentage_option == 'log'):
+                                    surface_params += ['log_' + surface_components[n] + '_percentage']
+                                    
+                elif (surface_model == 'gray'):
+                    pass
+                else:
+                    raise Exception('Only suface models are gray, constant, and lab_data.')
         
 
             N_surface_params = len(surface_params)   # Store number of physical parameters
