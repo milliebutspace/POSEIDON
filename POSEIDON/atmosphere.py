@@ -887,6 +887,159 @@ def compute_X_field_two_gradients(P, log_X_state, N_sectors, N_zones, param_spec
     return X_profiles
 
 
+@jit(nopython = True)
+def Parmentier_dissociation_profile(P, T, A_0, alpha, beta, gamma, A_0_ref):
+    '''
+    Thermal dissociation profile from Parmentier et al. 2018.
+    
+    Args:
+        P (np.array of float):
+            Atmosphere pressure array (bar).
+        T (np.array of float):
+            Atmosphere temperature array (K).
+        A_0 (float): 
+            Deep abundance without dissociation.
+        alpha (float):
+            Power-law index for pressure dependence.
+        beta (float):
+            Exponential coefficient for temperature dependence.
+        gamma (float):
+            Logarithmic offset coefficient.
+        A_0_ref (float):
+            Reference deep abundance without dissociation.
+
+    Returns:
+        A (np.array of float):
+            Volume mixing ratio profile.
+
+    '''
+
+    # Find horizontal shift 
+    log_A_shift = np.log10(A_0 / A_0_ref)
+
+    # Find dissociated abundance
+    A_d = 10 ** (log_A_shift - gamma) * P.astype('float64') ** alpha * 10 ** (beta / T.astype('float64'))
+    
+    # Combine deep abundance with dissociated abundance for full profile
+    A = ((1 / A_0) ** 0.5 + (1 / A_d) ** 0.5) ** (-2)
+
+    return A
+
+
+# TBD: numbafy this function be extracting the coefficient dictionary into a lookup function
+def compute_X_dissociation(P, T, log_X_state, N_sectors, N_zones, param_species, 
+                           species_has_profile, alpha, beta, phi, theta):
+    '''
+    Determines if a thermal dissociation profile should be used, and then 
+    calculates the appropriate profile using the Parmentier et al. 2018 formulation.
+
+    Args:
+        P (np.array of float):
+            Atmosphere pressure array (bar).
+        T (np.array of float):
+            Atmosphere temperature array (K)
+        log_X_state (2D np.array of float):
+            Mixing ratio state array.
+        param_species (np.array of str):
+            Chemical species with parametrised mixing ratios.
+        species_has_profile (np.array of int):
+            Array with an integer '1' if a species in 'param_species' has a 
+            gradient profile, or '0' for an constant mixing ratio with altitude.
+        N_sectors (int):
+            Number of azimuthal sectors.
+        N_zones (int):
+            Number of zenith zones.
+
+    Returns:
+        log_X: the mixing ratio  of the ith element as a function of pressure.
+
+    '''
+
+    # Store number of layers for convenience
+    N_layers = len(P)
+    
+    # Store lengths of species arrays for convenience
+    N_param_species = len(param_species)
+
+    # Initialise mixing ratio array
+    X_profiles = np.zeros(shape=(N_param_species, N_layers, N_sectors, N_zones))
+
+   # log_X = np.zeros(shape = (N_param_species, len(P), N_sectors, N_zones))
+
+    # Convert alpha and beta from degrees to radians
+    alpha_rad = alpha * (np.pi / 180.0)
+    beta_rad = beta * (np.pi / 180.0)
+
+    # Coefficients from Table 1 of Parmentier et al. 2018
+    coefficients = {'H2': (1.0, 2.41e4, 6.5, 10 ** -0.1),
+                    'H2O': (2.0, 4.83e4, 15.9, 10 ** -3.3), 
+                    'TiO': (1.6, 5.94e4, 23.0, 10 ** -7.1),
+                    'VO': (1.5, 5.40e4, 23.8, 10 ** -9.2),
+                    'H-': (0.6, -0.14e4, 7.7, 10 ** -8.3),
+                    'Na': (0.6, 1.89e4, 12.2, 10 ** -5.5),
+                    'K': (0.6, 1.28e4, 12.7, 10 ** -7.1)}
+
+    # Loop over parametrised chemical species
+    for q in range(N_param_species):
+
+        # Unpack abundance field parameters for this species
+        log_X_bar_term, Delta_log_X_term, \
+        Delta_log_X_DN = log_X_state[q,:]
+
+        # Convert average terminator abundance into linear space
+        X_bar_term = np.power(10.0, log_X_bar_term)
+
+        # Compute evening and morning abundances in terminator plane
+        X_Evening = X_bar_term * np.power(10.0, (Delta_log_X_term/2.0))
+        X_Morning = X_bar_term * np.power(10.0, (-Delta_log_X_term/2.0))
+
+        # Compute 3D abundance field for species q throughout atmosphere 
+        for j in range(N_sectors):
+
+            # Compute high abundance in terminator plane for given angle phi
+            if (phi[j] <= -alpha_rad/2.0):
+                X_term = X_Evening
+            elif ((phi[j] > -alpha_rad/2.0) and (phi[j] < alpha_rad/2.0)):
+                X_term = X_bar_term * np.power(10.0, (-(phi[j]/(alpha_rad/2.0)) * (Delta_log_X_term/2.0)))
+            elif (phi[j] >= -alpha_rad/2.0):
+                X_term = X_Morning
+                
+            # Compute dayside and nightside abundances for given angle phi
+            X_Day   = X_term * np.power(10.0, (Delta_log_X_DN/2.0))
+            X_Night = X_term * np.power(10.0, (-Delta_log_X_DN/2.0))
+            
+            for k in range(N_zones):
+                
+                # Compute deep abundance for given angles phi and theta
+                if (theta[k] <= -beta_rad/2.0):
+                    X_deep = X_Day
+                elif ((theta[k] > -beta_rad/2.0) and (theta[k] < beta_rad/2.0)):
+                    X_deep = X_term * np.power(10.0, (-(theta[k]/(beta_rad/2.0)) * (Delta_log_X_DN/2.0)))
+                elif (theta[k] >= -beta_rad/2.0):
+                    X_deep = X_Night
+
+                # If the given species has a vertical profile with a gradient
+                if (species_has_profile[q] == 1):
+
+                    # If species undergoes thermal dissociation in the Parmentier+2018 prescription
+                    if (param_species[q] in ('H2O', 'TiO', 'VO', 'H-', 'Na', 'K')):
+
+                        # Load coefficients for this species from dictionary
+                        alpha_P, beta_P, gamma_P, A_0_ref_P = coefficients[param_species[q]]
+
+                        # Use dissociation profile
+                        X_profiles[q,:,j,k] = Parmentier_dissociation_profile(P, T[:,j,k], X_deep, 
+                                                                              alpha_P, beta_P, gamma_P, A_0_ref_P)
+                    else:
+                    # Keep regular profile 
+                        X_profiles[q,:,j,k] = X_deep
+                else:
+                # Keep constant-in-altitude profile 
+                    X_profiles[q,:,j,k] = X_deep    
+    
+    return X_profiles
+
+
 def compute_X_lever(P, log_X_state, species_has_profile, N_sectors, N_zones):
     '''
     The function takes in four parameters and returns an array of values called log_X  that represent the
@@ -903,7 +1056,8 @@ def compute_X_lever(P, log_X_state, species_has_profile, N_sectors, N_zones):
         log_p: An array of logarithm of the pressures.
 
     Returns:
-        log_x: the the mixing ratio  of the ith element as a function of pressure.
+        log_X: the the mixing ratio  of the ith element as a function of pressure.
+    
     '''
 
     log_p = np.log10(P)
@@ -938,8 +1092,8 @@ def compute_X_lever(P, log_X_state, species_has_profile, N_sectors, N_zones):
         
     return np.power(10, log_X)
 
-def add_bulk_component(P, X_param, N_species, N_sectors, N_zones, bulk_species,
-                       He_fraction):
+def add_bulk_component(P, T, X_param, N_species, N_sectors, N_zones, 
+                       bulk_species, He_fraction):
     ''' 
     Concatenates mixing ratios of the bulk species to the parametrised mixing
     ratios, forming the full mixing ratio array (i.e. sums to 1).
@@ -951,6 +1105,8 @@ def add_bulk_component(P, X_param, N_species, N_sectors, N_zones, bulk_species,
     Args:
         P (np.array of float):
             Atmosphere pressure array (bar).
+        T (np.array of float):
+            Atmosphere temperature array (K).
         X_param (4D np.array of float):
             Mixing ratios of the parametrised chemical species in each layer 
             as a function of pressure, sector, and zone.
@@ -979,7 +1135,7 @@ def add_bulk_component(P, X_param, N_species, N_sectors, N_zones, bulk_species,
     X = np.zeros(shape=(N_species, N_layers, N_sectors, N_zones))
     
     # For H2+He bulk mixture
-    if ('H2' and 'He' in bulk_species):
+    if (('H2' and 'He' in bulk_species) and ('H' not in bulk_species)):
     
         # Compute H2 and He mixing ratios for a fixed H2/He fraction (defined in config.py)
         X_H2 = (1.0 - np.sum(X_param, axis=0))/(1.0 + He_fraction)   # H2 mixing ratio array
@@ -990,7 +1146,7 @@ def add_bulk_component(P, X_param, N_species, N_sectors, N_zones, bulk_species,
         X[1,:,:,:] = X_He
 
     # For H+He bulk mixture
-    elif ('H' and 'He' in bulk_species):
+    elif (('H' and 'He' in bulk_species) and ('H2' not in bulk_species)):
 
         # Compute H and He mixing ratios for a fixed H2/He fraction (defined in config.py)
         X_H = 2.0*(1.0 - np.sum(X_param, axis=0))/(1.0 + He_fraction)   # H mixing ratio array
@@ -999,6 +1155,36 @@ def add_bulk_component(P, X_param, N_species, N_sectors, N_zones, bulk_species,
         # Add H and He mixing ratios to first two elements in X state vector for this region
         X[0,:,:,:] = X_H  
         X[1,:,:,:] = X_He
+
+    # For H2+H+He bulk mixture with dissociation
+    elif ('H2' and 'H' and 'He' in bulk_species):
+
+        # Determine background gas total mixing ratio (H2 + H + He)
+        X_bulk = 1.0 - np.sum(X_param, axis=0)
+
+        # Determine deep abundances of H2 and He (negligible H)
+        X_H2_deep = X_bulk / (1.0 + He_fraction)
+        X_He_deep = He_fraction * X_H2_deep
+
+        # H2 dissociation coefficients from Table 1 of Parmentier et al. 2018
+        Parmentier_coefficients = {'H2': (1.0, 2.41e4, 6.5, 10 ** -0.1)}
+        alpha, beta, gamma, A_0_ref = Parmentier_coefficients['H2']
+
+        # Determine vertical profile of H2 using Parmentier et al. 2018 dissociation
+        for j in range(N_sectors):
+            for k in range(N_zones):
+
+                X_H2 = Parmentier_dissociation_profile(P, T[:,j,k], X_H2_deep[:,j,k], 
+                                                       alpha, beta, gamma, A_0_ref)
+
+                # Determine H and He profiles from H2 profile
+                X_H = (X_bulk[:,j,k] - (1 + He_fraction) * X_H2) / (1 + He_fraction/2.0)
+                X_He = (He_fraction * X_H2) + ((He_fraction/2.0) * X_H)
+                        
+                # Add H2, H, and He mixing ratios to first three elements in X state vector for this region
+                X[0,:,j,k] = X_H2
+                X[1,:,j,k] = X_H
+                X[2,:,j,k] = X_He
         
     # For any other choice of bulk species, the first mixing ratio is the bulk species
     else: 
@@ -2006,6 +2192,12 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
     if (X_profile in ['gradient', 'two-gradients']):
         species_has_profile[np.isin(param_species, species_vert_gradient)] = 1  
     
+    elif (X_profile == 'dissociation'):
+        if (len(species_vert_gradient) == 0):
+            species_has_profile[:] = 1
+        else:
+            species_has_profile[np.isin(param_species, species_vert_gradient)] = 1
+
     # Read user provided mixing ratio profiles
     if (X_profile == 'file_read'):
         X = X_input.reshape((N_species, len(P), 1, 1))   
@@ -2017,7 +2209,6 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
             X_param = compute_X_field_gradient(P, log_X_state, N_sectors, N_zones, 
                                                param_species, species_has_profile, 
                                                alpha, beta, phi, theta)
-
         # For two-gradient profiles                            
         elif (X_profile == 'two-gradients'):
             X_param = compute_X_field_two_gradients(P, log_X_state, N_sectors, N_zones, 
@@ -2026,6 +2217,14 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
             
         elif (X_profile == 'lever'):
             X_param = compute_X_lever(P, log_X_state, species_has_profile, N_sectors, N_zones)
+
+        # For thermal dissociation profiles
+        elif (X_profile == 'dissociation'):
+    #        X_param = compute_X_dissociation_1D(P,T[:,0,0], log_X_state,
+    #                                            param_species, species_has_profile, 
+    #                                            N_sectors, N_zones)
+            X_param = compute_X_dissociation(P, T, log_X_state, N_sectors, N_zones, param_species, 
+                                             species_has_profile, alpha, beta, phi, theta)
 
         # Read in equilibrium mixing ratio profiles 
         elif (X_profile == 'chem_eq'):
@@ -2076,11 +2275,9 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
             K_X_state = [X_param[param_species.index("Na")]*0.1]
             X_param = np.append(X_param, K_X_state, axis = 0)
             
-        
         # Add bulk mixing ratios to form full mixing ratio array
-        X = add_bulk_component(P, X_param, N_species, N_sectors, N_zones, 
+        X = add_bulk_component(P, T, X_param, N_species, N_sectors, N_zones, 
                                bulk_species, He_fraction)
-
     
     # Check if any mixing ratios are negative (i.e. trace species sum to > 1, so bulk < 0)
     if (np.any(X[0,:,:,:] < 0.0)): 

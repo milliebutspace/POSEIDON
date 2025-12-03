@@ -42,7 +42,8 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
              file_read).
         X_profile (str):
             Chosen mixing ratio profile parametrisation
-            (Options: isochem / gradient / two-gradients / lever / file_read).
+            (Options: isochem / gradient / two-gradients / lever / dissociation / 
+            file_read).
         cloud_model (str):
             Chosen cloud parametrisation
             (Options: cloud-free / MacMad17 / Iceberg / Mie).
@@ -356,7 +357,7 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
 
         #***** Mixing ratio parameters *****#
 
-        if (X_profile not in ['isochem', 'gradient', 'two-gradients', 'file_read', 'lever', 'chem_eq']):
+        if (X_profile not in ['isochem', 'gradient', 'two-gradients', 'file_read', 'lever', 'chem_eq', 'dissociation']):
             raise Exception("Error: unsupported mixing ratio profile.")
         
         if (X_profile == 'lever') and (X_dim != 1):
@@ -379,6 +380,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                          'log_P_' + species + '_mid', 'log_' + species + '_deep']
                         elif (X_profile == 'lever'):
                             X_params += ['log_' + species + '_iso', 'log_P_' + species, 'Upsilon_' + species]
+                        elif (X_profile == 'dissociation'):
+                            if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                X_params += ['log_' + species + '_deep']   # Deep abundance
+                            else:
+                                X_params += ['log_' + species]   # Constant in altitude
                     else:
                         X_params += ['log_' + species]
                 
@@ -399,6 +405,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_Even_high', 'log_' + species + '_Even_mid',
                                                      'log_' + species + '_Morn_high', 'log_' + species + '_Morn_mid', 
                                                      'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_Even_deep', 'log_' + species + '_Morn_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species + '_Even', 'log_' + species + '_Morn']   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species + '_Even', 'log_' + species + '_Morn']
 
@@ -408,7 +419,12 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_deep']
                                     elif (X_profile == 'two-gradients'):  
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_mid', 
-                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']      
+                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species]   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species]
                                 
@@ -423,6 +439,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_Day_high', 'log_' + species + '_Day_mid',
                                                      'log_' + species + '_Night_high', 'log_' + species + '_Night_mid', 
                                                      'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_Day_deep', 'log_' + species + '_Night_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species + '_Day', 'log_' + species + '_Night']   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species + '_Day', 'log_' + species + '_Night']
 
@@ -432,7 +453,12 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_deep']
                                     elif (X_profile == 'two-gradients'):  
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_mid', 
-                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']      
+                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species]   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species]
                                                     
@@ -450,6 +476,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_bar_term_high', 'log_' + species + '_bar_term_mid',
                                                      'Delta_log_' + species + '_term_high', 'Delta_log_' + species + '_term_mid', 
                                                      'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_bar_term_deep', 'Delta_log_' + species + '_term_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term']   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term']
 
@@ -459,7 +490,12 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_deep']
                                     elif (X_profile == 'two-gradients'):  
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_mid', 
-                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']      
+                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species]   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species]
 
@@ -474,6 +510,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_bar_DN_high', 'log_' + species + '_bar_DN_mid',
                                                      'Delta_log_' + species + '_DN_high', 'Delta_log_' + species + '_DN_mid', 
                                                      'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_bar_DN_deep', 'Delta_log_' + species + '_DN_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species + '_bar_DN', 'Delta_log_' + species + '_DN']   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species + '_bar_DN', 'Delta_log_' + species + '_DN']
 
@@ -483,12 +524,20 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_deep']
                                     elif (X_profile == 'two-gradients'):  
                                         X_params += ['log_' + species + '_high', 'log_' + species + '_mid', 
-                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']      
+                                                     'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                                    elif (X_profile == 'dissociation'):
+                                        if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                            X_params += ['log_' + species + '_deep']   # Deep abundance
+                                        else:
+                                            X_params += ['log_' + species]   # Constant in altitude
                                 else:   # No altitude variation for this species
                                     X_params += ['log_' + species]
 
-                    # Gradient parameter prescription from MacDonald & Lewis (2023)
+                    # Gradient parameter prescription
                     if (TwoD_param_scheme == 'gradient'):
+
+                        if (X_profile == 'dissociation'):
+                            raise Exception("Error: Dissociation profile not supported for 2D gradient parameter scheme.")
 
                         # Species with variation only across the terminator (2D Day-Night X_i)
                         if (TwoD_type == 'D-N'):                
@@ -529,6 +578,13 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                              'Delta_log_' + species + '_term_high', 'Delta_log_' + species + '_term_mid', 
                                              'Delta_log_' + species + '_DN_high', 'Delta_log_' + species + '_DN_mid', 
                                              'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                            elif (X_profile == 'dissociation'):
+                                if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                    X_params += ['log_' + species + '_bar_term_deep', 'Delta_log_' + species + '_term_deep',
+                                                 'Delta_log_' + species + '_DN_deep']   # Deep abundance
+                                else:
+                                    X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term',
+                                                 'Delta_log_' + species + '_DN']   # Constant in altitude
                         else:   # No altitude variation for this species
                             X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term',
                                          'Delta_log_' + species + '_DN']
@@ -543,6 +599,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                 X_params += ['log_' + species + '_bar_term_high', 'log_' + species + '_bar_term_mid',
                                              'Delta_log_' + species + '_term_high', 'Delta_log_' + species + '_term_mid', 
                                              'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                            elif (X_profile == 'dissociation'):
+                                if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                    X_params += ['log_' + species + '_bar_term_deep', 'Delta_log_' + species + '_term_deep']   # Deep abundance
+                                else:
+                                    X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term']   # Constant in altitude
                         else:   # No altitude variation for this species
                             X_params += ['log_' + species + '_bar_term', 'Delta_log_' + species + '_term']
 
@@ -556,6 +617,11 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                 X_params += ['log_' + species + '_bar_DN_high', 'log_' + species + '_bar_DN_mid',
                                              'Delta_log_' + species + '_DN_high', 'Delta_log_' + species + '_DN_mid', 
                                              'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                            elif (X_profile == 'dissociation'):
+                                if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                    X_params += ['log_' + species + '_bar_DN_deep', 'Delta_log_' + species + '_DN_deep']   # Deep abundance
+                                else:
+                                    X_params += ['log_' + species + '_bar_DN', 'Delta_log_' + species + '_DN']   # Constant in altitude
                         else:   # No altitude variation for this species
                             X_params += ['log_' + species + '_bar_DN', 'Delta_log_' + species + '_DN']
 
@@ -566,7 +632,12 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                                 X_params += ['log_' + species + '_high', 'log_' + species + '_deep']
                             elif (X_profile == 'two-gradients'):  
                                 X_params += ['log_' + species + '_high', 'log_' + species + '_mid', 
-                                             'log_P_' + species + '_mid', 'log_' + species + '_deep']      
+                                             'log_P_' + species + '_mid', 'log_' + species + '_deep']
+                            elif (X_profile == 'dissociation'):
+                                if (species in ['H2O', 'TiO', 'VO', 'H-', 'Na', 'K']):   # Parmentier+2018 profiles
+                                    X_params += ['log_' + species + '_deep']   # Deep abundance
+                                else:
+                                    X_params += ['log_' + species]   # Constant in altitude
                         else:
                             X_params += ['log_' + species]
     
@@ -645,7 +716,7 @@ def assign_free_params(param_species, bulk_species, object_type, PT_profile,
                     cloud_params += ['f_aerosol_2']
                     cloud_params += ['f_clear']
                 else:
-                    raise Exception('Patchy clouds only avaible for up to two species. Otherwise reach out to Elijah.')
+                    raise Exception('Patchy clouds only available for up to two species. Otherwise reach out to Elijah.')
 
             if (cloud_type =='fuzzy_deck'):
 
@@ -1103,6 +1174,8 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
         len_X = 8
     elif (X_profile == 'lever'):
         len_X = 3                     # (log_X_iso, log_P_X, Upsilon_X)
+    elif (X_profile == 'dissociation'):
+        len_X = 3                     # (log_X_bar_term, Delta_log_X_term, Delta_log_X_DN)
     elif (X_profile == 'isochem'):
         len_X = 4      # To cover multi-D cases, we use same log_X format as gradient profile
     elif (X_profile == 'file_read'):   # User provided file
@@ -1320,16 +1393,33 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
                         log_X_state[q,2] = 0.0                   # Upsilon_X = 0 for isochem
                         count += 1
 
+            elif (X_profile == 'dissociation'):
+                
+                count = 0  # Counter to make tracking location in log_X_in easier
+                
+                # Loop over parametrised chemical species
+                for q, species in enumerate(param_species):
+                    if ((len(species_vert_gradient) != 0) and (species in species_vert_gradient)):
+                        log_X_state[q,0] = log_X_in[count]       # log_X_bar_term_deep
+                        log_X_state[q,1] = 0.0                   # No vertical gradient
+                        log_X_state[q,2] = 0.0                   # No Day-Night gradient
+                        count += 1
+                    else:   # No altitude variation for this species
+                        log_X_state[q,0] = log_X_in[count]       # log_X_bar_term
+                        log_X_state[q,1] = 0.0                   # No vertical gradient
+                        log_X_state[q,2] = 0.0                   # No Day-Night gradient
+                        count += 1
+
         # 2D atmosphere
         elif (X_dim == 2):
 
             count = 0  # Counter to make tracking location in log_X_in easier
-        
+
             # Loop over parametrised chemical species
             for q, species in enumerate(param_species):
 
                 # Convert input parameters into average terminator mixing ratio and difference
-                if (X_profile == 'isochem'):
+                if (X_profile in ['isochem', 'dissociation']):
                     if (((len(species_EM_gradient) != 0) and (species in species_EM_gradient)) or 
                         ((len(species_DN_gradient) != 0) and (species in species_DN_gradient))):
                         if (TwoD_param_scheme == 'absolute'):
@@ -1462,6 +1552,10 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
                         log_X_state[q,5] = 0.0                  # No Day-Night gradients
                         log_X_state[q,6] = log_P_X_mid
                         log_X_state[q,7] = log_X_deep
+                    elif (X_profile == 'dissociation'):
+                        log_X_state[q,0] = log_X_bar
+                        log_X_state[q,1] = Delta_log_X         
+                        log_X_state[q,2] = 0.0                  # No Day-Night gradient
 
                 # For Day-Night gradients
                 if (TwoD_type == 'D-N'):
@@ -1479,6 +1573,10 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
                         log_X_state[q,5] = Delta_log_X_mid
                         log_X_state[q,6] = log_P_X_mid
                         log_X_state[q,7] = log_X_deep
+                    elif (X_profile == 'dissociation'):
+                        log_X_state[q,0] = log_X_bar
+                        log_X_state[q,1] = 0.0                  # No Evening-Morning gradient
+                        log_X_state[q,2] = Delta_log_X
 
         # 3D atmosphere
         elif (X_dim == 3):
@@ -1488,7 +1586,7 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
             # Loop over parametrised chemical species
             for q, species in enumerate(param_species):
 
-                if (X_profile == 'isochem'):
+                if (X_profile in ['isochem', 'dissociation']):
                     if (((len(species_EM_gradient) != 0) and (species in species_EM_gradient)) and
                         ((len(species_DN_gradient) != 0) and (species in species_DN_gradient))):
                         log_X_bar_term = log_X_in[count]
@@ -1651,8 +1749,12 @@ def generate_state(PT_in, log_X_in, param_species, PT_dim, X_dim, PT_profile,
                     log_X_state[q,5] = Delta_log_X_DN_mid
                     log_X_state[q,6] = log_P_X_mid
                     log_X_state[q,7] = log_X_deep
+                elif (X_profile == 'dissociation'):
+                    log_X_state[q,0] = log_X_bar_term
+                    log_X_state[q,1] = Delta_log_X_term
+                    log_X_state[q,2] = Delta_log_X_DN
 
-    # If it is chem_eq, then we need the 
+    
     else:
         log_X_state = log_X_in
                 
