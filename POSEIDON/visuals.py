@@ -3918,17 +3918,25 @@ def plot_PT_retrieved(planet_name, PT_median, PT_low2, PT_low1, PT_high1,
         if log_P_surf_sigma_upper_lower == 'upper':
             #ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
             ax1.axhline(P_surf_low, lw = 3.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure ($1 \sigma$ upper)')
-            ax1.axhspan(P_surf_low,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
-            ax1.axhspan(median_P_surf,P_surf_high, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
+            ax1.axhspan(P_surf_low,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],)
+            ax1.axhspan(median_P_surf,P_surf_high, lw = 0.0, alpha = 0.25, color = colours[i])
             #ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
-            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
+            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            
+            #ax1.axhspan(P_surf_low,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
+            #ax1.axhspan(median_P_surf,P_surf_high, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
+            ##ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            #ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
 
         elif log_P_surf_sigma_upper_lower == 'lower':
             ax1.axhspan(median_P_surf,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
             ax1.axhline(P_surf_high, lw = 3.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure ($1 \sigma$ lower)')
-            ax1.axhspan(P_surf_high,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
-            ax1.axhspan(median_P_surf,P_surf_low, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
-            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
+            ax1.axhspan(P_surf_high,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],)
+            ax1.axhspan(median_P_surf,P_surf_low, lw = 0.0, alpha = 0.25, color = colours[i],)
+            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray',)
+            #ax1.axhspan(P_surf_high,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
+            #ax1.axhspan(median_P_surf,P_surf_low, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
+            #ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
 
         ax1.axhline(median_P_surf, lw = 1.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure (Median)')
 
