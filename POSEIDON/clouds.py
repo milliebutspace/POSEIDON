@@ -1121,7 +1121,8 @@ def database_properties_plot(file_name):
 def vary_one_parameter(model, planet, star, param_name, vary_list, wl, opac, 
                        P, P_ref, R_p_ref, PT_params_og, log_X_params_og, 
                        cloud_params_og, spectrum_type = 'transmission', 
-                       y_min = None, y_max = None, y_unit = 'transit_depth'):
+                       y_min = None, y_max = None, y_unit = 'transit_depth',
+                       wl_max = None):
     
     '''
     This function is utilized in tutorial noteooks to show how turning a knob on a parameter changes a resultant spectrum
@@ -1192,7 +1193,10 @@ def vary_one_parameter(model, planet, star, param_name, vary_list, wl, opac,
         model = define_model(model_name,bulk_species,param_species,
                                 PT_profile = model['PT_profile'], X_profile = model['X_profile'],
                                 cloud_model = model['cloud_model'], cloud_type = model['cloud_type'],
-                                cloud_dim = model['cloud_dim'])
+                                cloud_dim = model['cloud_dim'],
+                                thermal = model['thermal'],
+                                thermal_scattering = model['thermal_scattering'],
+                                reflection = model['reflection'])
 
     else:
         aerosol_species = model['aerosol_species']
@@ -1283,6 +1287,7 @@ def vary_one_parameter(model, planet, star, param_name, vary_list, wl, opac,
                        save_fig = False,
                        y_unit = y_unit,
                        y_min = y_min, y_max = y_max,
+                       wl_max = wl_max
                        )
 
 ##############################
