@@ -4568,7 +4568,7 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
             ax = axes_in[q]
 
         # Set number of significant figures for titles
-        if ((('T' in param) or ('T_' in param)) and ('log' not in param)):
+        if ((('T' in param) or ('T_' in param)) and ('log' not in param) and ('percentage' not in param)):
             title_fmt = '.0f'
         elif (param == 'a') or (param == 'b'):
             title_fmt = ".2f"
@@ -4841,7 +4841,7 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                 ax.xaxis.set_minor_locator(xminorLocator)
             
             # Better axis label spacing for temperatures
-            if ('T' in param):
+            if ('T' in param) and ('percentage' not in param):
                 if ((param_max - param_min) < 100):
                     xmajor_interval = 20
                     xminor_interval = 10
