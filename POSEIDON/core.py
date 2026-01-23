@@ -1296,7 +1296,8 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
                      disable_continuum = False, suppress_print = False,
                      Gauss_quad = 2, use_photosphere_radius = True,
                      device = 'cpu', y_p = np.array([0.0]),
-                     return_albedo = False):
+                     return_albedo = False,
+                     kappa_contributions = [],cloud_properties_contributions = []):
     '''
     Calculate extinction coefficients, then solve the radiative transfer 
     equation to compute the spectrum of the model atmosphere.
@@ -1342,6 +1343,10 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
             Units are in m, not in stellar radii.
         return_albedo (bool):
             If True, returns spectrum and albedo 
+        kappa_contributions (array):
+            Used by contributions.py functions
+        cloud_properties_contributions (array):
+            Used by contributions.py functions 
 
     Returns:
         spectrum (np.array of float):
@@ -1502,244 +1507,316 @@ def compute_spectrum(planet, star, model, atmosphere, opac, wl,
     bf_species = model['bf_species']
             
     # If computing line-by-line radiative transfer, use lbl optimised functions 
-    # If there is no atmosphere, there is no opac object
-    if (disable_atmosphere == False):
-        if (opac['opacity_treatment'] == 'line_by_line'):
 
-            # Identify the opacity database being used
-            opacity_database = opac['opacity_database']
+    # If there is kappa_contribition (where kappas are computed), skip the below and just compute the spectrum
+    if len(kappa_contributions) != 0:
+        kappa_gas, kappa_Ray, kappa_cloud, kappa_cloud_seperate = kappa_contributions[0],kappa_contributions[1],kappa_contributions[2],kappa_contributions[3]
+        w_cloud, g_cloud = cloud_properties_contributions[0], cloud_properties_contributions[1]
 
-            # Load the version of the opacity database
-            database_version = opac['database_version']
+        # These lines of code are not included in contribution.py, and are therefore put here 
 
-            # Unpack pre-computed Rayleigh cross sections
-            Rayleigh_stored = opac['Rayleigh_stored']
-
-            # Calculate extinction coefficients in line-by-line mode        
-            kappa_gas, kappa_Ray, kappa_cloud = extinction_LBL(chemical_species, active_species, 
-                                                            CIA_pairs, ff_pairs, bf_species, 
-                                                            n, T, P, wl, X, X_active, X_CIA, 
-                                                            X_ff, X_bf, a, gamma, P_cloud,
-                                                            kappa_cloud_0, Rayleigh_stored, 
-                                                            enable_haze, enable_deck,
-                                                            enable_surface, N_sectors, 
-                                                            N_zones, P_surf, opacity_database, 
-                                                            disable_continuum, suppress_print,
-                                                            database_version)
+        # If there is a surface or if there there is an albedo deck 
+        # Note that albedo deck is treated like a surface below
+        if surface == True or albedo_deck != -1:
             
-        # If using opacity sampling, we can use pre-interpolated cross sections
-        elif (opac['opacity_treatment'] == 'opacity_sampling'):
-
-            # Unpack pre-interpolated cross sections
-            sigma_stored = opac['sigma_stored']
-            CIA_stored = opac['CIA_stored']
-            Rayleigh_stored = opac['Rayleigh_stored']
-            ff_stored = opac['ff_stored']
-            bf_stored = opac['bf_stored']
-            aerosol_stored = opac['aerosol_stored']
-
-            # Also unpack fine temperature and pressure grids from pre-interpolation
-            T_fine = opac['T_fine']
-            log_P_fine = opac['log_P_fine']
-
-            # Running POSEIDON on the CPU
-            if (device == 'cpu'):
-                
-                # If the cloud model is Mie, need to parse out 
-                # How the cloud type is defined and whether or not 
-                # aerosol grid is being used or not 
-                if (model['cloud_model'] == 'Mie'):
-
-                    n_aerosol, sigma_ext_cloud, \
-                    g_cloud, w_cloud = compute_relevant_Mie_properties(model, aerosol_species, aerosol_stored,
-                                                                                                    P, wl, r, H, n,
-                                                                                                    r_m, r_i_real, r_i_complex,
-                                                                                                    P_cloud, P_cloud_bottom, log_X_Mie,
-                                                                                                    log_n_max, fractional_scale_height,
-                                                                                                    lognormal_logwidth_free, log_r_m_std_dev,
-                                                                                                    )
-
-                else:
-
-                    # Generate empty arrays so the dark god numba is satisfied
-                    n_aerosol = []
-                    sigma_ext_cloud = []
-                        
-                    n_aerosol.append(np.zeros_like(r))
-                    sigma_ext_cloud.append(np.zeros_like(wl))
-
-                    n_aerosol = np.array(n_aerosol)
-                    sigma_ext_cloud = np.array(sigma_ext_cloud)
-
-                    w_cloud = np.zeros_like(wl)
-                    g_cloud = np.zeros_like(wl)
-
-                # Calculate extinction coefficients in standard mode
-
-                # Numba will get mad if P_cloud is not an array (because you can have more than one cloud)
-                # This line just makes sure that P_cloud is an array 
-                if isinstance(P_cloud, np.ndarray) == False:
-                    P_cloud = np.array([P_cloud])
-
-                # Create the kappa arrays
-                kappa_gas, kappa_Ray, \
-                kappa_cloud, kappa_cloud_seperate = extinction(chemical_species, active_species,
-                                                                                    CIA_pairs, ff_pairs, bf_species,
-                                                                                    n, T, P, wl, X, X_active, X_CIA, 
-                                                                                    X_ff, X_bf, a, gamma, P_cloud, 
-                                                                                    kappa_cloud_0, sigma_stored, 
-                                                                                    CIA_stored, Rayleigh_stored, 
-                                                                                    ff_stored, bf_stored, enable_haze, 
-                                                                                    enable_deck, enable_surface,
-                                                                                    N_sectors, N_zones, T_fine, 
-                                                                                    log_P_fine, P_surf, enable_Mie, 
-                                                                                    n_aerosol, sigma_ext_cloud)
-                
-                # If we read in an eddysed file (from PICASO or VIRGA) that
-                # contains the single scattering albedo, asymmetry parameter, or kappa_cloud
-                if model['cloud_model'] == 'eddysed':
-
-                    # Shenanigans so that the eddysed/picaso arrays work with whats already in POSEIDON
-                    w_cloud_array = []
-                    g_cloud_array = []
-                    kappa_cloud_seperate = []
-
-                    w_cloud_array.append(w_cloud_eddysed)
-                    g_cloud_array.append(g_cloud_eddysed)
-                    kappa_cloud_seperate.append(kappa_cloud_eddysed)
-
-                    w_cloud = np.array(w_cloud_array)
-                    g_cloud = np.array(g_cloud_array)
-                    kappa_cloud = np.array(kappa_cloud_eddysed)
-                    kappa_cloud_seperate = np.array(kappa_cloud_seperate)
-                
-                # Else, we need w and g from the precomputed aerosol database
-                # We loop over each aerosol species and reshape the w and g arrays to have the same 
-                # 4d shape as the kappa arrays 
-                # They are then looped over in toon emission and toon reflection 
-                elif thermal_scattering == True or reflection == True:
-
-                    # Intialize w_cloud and g_cloud arrays
-                    # Shape = (Aerosol_species, pressure, sector, zone, wl)
-                    w_cloud_array = []
-                    g_cloud_array = []
-
-                    if ((model['cloud_type'] == 'opaque_deck_plus_slab') or (model['cloud_type'] == 'opaque_deck_plus_uniform_X')
-                        or (model['cloud_type'] == 'shiny_opaque_deck_plus_slab') or (model['cloud_type'] == 'shiny_opaque_deck_plus_uniform_X')):
-                        #Adds a fake layer of w and g which, when multiplied by kappa_deck, will give 0 opacity anyways
-                        w_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
-                        g_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
-
-                    if len(aerosol_species) != 0:
-                        for aerosol in range(len(w_cloud)):
-                            # For each w and g for each aerosol, make it have the same shape as kappa_cloud
-                            # turn into a list so it doesn't end up being an array of arrays 
-                            w_cloud_array.append((np.ones_like(kappa_cloud)*w_cloud[aerosol]).tolist())
-                            g_cloud_array.append((np.ones_like(kappa_cloud)*g_cloud[aerosol]).tolist())
-                    else:
-                        # Just a list of 0s
-                        w_cloud_array.append((np.ones_like(kappa_gas)*w_cloud).tolist())
-                        g_cloud_array.append((np.ones_like(kappa_gas)*g_cloud).tolist())
-                    
-                    # Turn into an array so numba in toon functions is happy with indexing 
-                    w_cloud = np.array(w_cloud_array)
-                    g_cloud = np.array(g_cloud_array)
-                
-                # two doesn't work for transmission right now 
-                elif spectrum_type == 'transmission' and (len(aerosol_species) == 2) and (cloud_dim == 2):
-                    raise Exception('Cannot do patchy multiple clouds in transmission yet (fix this elijah)')
-
-                # If there is a surface or if there there is an albedo deck 
-                # Note that albedo deck is treated like a surface below
-                if surface == True or albedo_deck != -1:
-                    
-                    if surface == True:
-                        if surface_model == 'gray':
-                            surf_reflect = np.zeros_like(wl)
-                            surf_reflect_array = []
-                        
-                        elif surface_model == 'constant':
-                            surf_reflect = np.full_like(wl, albedo_surf)
-                            surf_reflect_array = []
-
-                        elif surface_model == 'lab_data':
-                            surf_reflect_array = interpolate_surface_components(wl,surface_components,surface_component_albedos)
-
-                            # If we are to apply surface percentages to the albedos (not the models)
-                            if surface_percentage_apply_to == 'albedos':
-                                surf_reflect = np.zeros_like(wl)
-                                for n in range(len(surface_component_percentages)):
-                                    surf_reflect += surface_component_percentages[n]*surf_reflect_array[n]
-
-                            else:
-                                surf_reflect = np.full_like(wl, -1)  
-                    else:
-                        surf_reflect = np.full_like(wl, albedo_deck)
-                        surf_reflect_array = []
-
-                # Make a dummy surf_reflect array so that the numba gods are happy in the toon functions 
-                else:
-                    surf_reflect = np.full_like(wl, -1) 
+            if surface == True:
+                if surface_model == 'gray':
+                    surf_reflect = np.zeros_like(wl)
                     surf_reflect_array = []
-            
-
-            # Running POSEIDON on the GPU
-            elif (device == 'gpu'):
-
-                N_wl = len(wl)     # Number of wavelengths on model grid
-                N_layers = len(P)  # Number of layers
-
-                # Define extinction coefficient arrays explicitly on GPU
-                kappa_gas = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
-                kappa_Ray = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
-                kappa_cloud = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
-
-                # Find index of deep pressure below which atmosphere is opaque
-                P_deep = 1000       # Default value of P_deep (needs to be high for brown dwarfs)
-                i_bot = np.argmin(np.abs(P - P_deep))
-
-                # Store length variables for mixing ratio arrays 
-                N_species = len(chemical_species)        # Number of chemical species
-                N_species_active = len(active_species)   # Number of spectrally active species
                 
-                N_cia_pairs = len(CIA_pairs)             # Number of cia pairs included
-                N_ff_pairs = len(ff_pairs)               # Number of free-free pairs included
-                N_bf_species = len(bf_species)           # Number of bound-free species included
-            
-                # Calculate extinction coefficients in standard mode
-                extinction_GPU[block, thread](kappa_gas, kappa_Ray, kappa_cloud, i_bot, 
-                                            N_species, N_species_active, N_cia_pairs, 
-                                            N_ff_pairs, N_bf_species, n, T, P, wl, 
-                                            X, X_active, X_CIA, X_ff, X_bf, a, 
-                                            gamma, P_cloud, kappa_cloud_0, 
-                                            sigma_stored, CIA_stored, 
-                                            Rayleigh_stored, ff_stored, bf_stored, 
-                                            enable_haze, enable_deck,
-                                            enable_surface, N_sectors, N_zones, 
-                                            T_fine, log_P_fine, P_surf, P_deep)
-            
-    # If there is no atmosphere, but there is a surface, then the albedos still need to be read in 
-    elif disable_atmosphere == True and surface == True:
+                elif surface_model == 'constant':
+                    surf_reflect = np.full_like(wl, albedo_surf)
+                    surf_reflect_array = []
 
-        if surface_model == 'gray':
-            surf_reflect = np.zeros_like(wl)
-            surf_reflect_array = []
-        
-        elif surface_model == 'constant':
-            surf_reflect = np.full_like(wl, albedo_surf)
-            surf_reflect_array = []
+                elif surface_model == 'lab_data':
+                    surf_reflect_array = interpolate_surface_components(wl,surface_components,surface_component_albedos)
 
-        elif surface_model == 'lab_data':
-            surf_reflect_array = interpolate_surface_components(wl,surface_components,surface_component_albedos)
+                    # If we are to apply surface percentages to the albedos (not the models)
+                    if surface_percentage_apply_to == 'albedos':
+                        surf_reflect = np.zeros_like(wl)
+                        for n in range(len(surface_component_percentages)):
+                            surf_reflect += surface_component_percentages[n]*surf_reflect_array[n]
 
-            # If we are to apply surface percentages to the albedos (not the models)
-            if surface_percentage_apply_to == 'albedos':
-                surf_reflect = np.zeros_like(wl)
-                for n in range(len(surface_component_percentages)):
-                    surf_reflect += surface_component_percentages[n]*surf_reflect_array[n]
-
+                    else:
+                        surf_reflect = np.full_like(wl, -1)  
             else:
-                surf_reflect = np.full_like(wl, -1)  
+                surf_reflect = np.full_like(wl, albedo_deck)
+                surf_reflect_array = []
+
+        # Make a dummy surf_reflect array so that the numba gods are happy in the toon functions 
+        else:
+            surf_reflect = np.full_like(wl, -1) 
+            surf_reflect_array = []
+
+        # Same with these lines of code 
+        if thermal_scattering == True or reflection == True:
+
+            # Intialize w_cloud and g_cloud arrays
+            # Shape = (Aerosol_species, pressure, sector, zone, wl)
+            w_cloud_array = []
+            g_cloud_array = []
+
+            if ((model['cloud_type'] == 'opaque_deck_plus_slab') or (model['cloud_type'] == 'opaque_deck_plus_uniform_X')
+                or (model['cloud_type'] == 'shiny_opaque_deck_plus_slab') or (model['cloud_type'] == 'shiny_opaque_deck_plus_uniform_X')):
+                #Adds a fake layer of w and g which, when multiplied by kappa_deck, will give 0 opacity anyways
+                w_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
+                g_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
+
+            if len(aerosol_species) != 0:
+                for aerosol in range(len(w_cloud)):
+                    # For each w and g for each aerosol, make it have the same shape as kappa_cloud
+                    # turn into a list so it doesn't end up being an array of arrays 
+                    w_cloud_array.append((np.ones_like(kappa_cloud)*w_cloud[aerosol]).tolist())
+                    g_cloud_array.append((np.ones_like(kappa_cloud)*g_cloud[aerosol]).tolist())
+            else:
+                # Just a list of 0s
+                w_cloud_array.append((np.ones_like(kappa_gas)*w_cloud).tolist())
+                g_cloud_array.append((np.ones_like(kappa_gas)*g_cloud).tolist())
+            
+            # Turn into an array so numba in toon functions is happy with indexing 
+            w_cloud = np.array(w_cloud_array)
+            g_cloud = np.array(g_cloud_array)
+                    
+    else:
+        # If there is no atmosphere, there is no opac object
+        # So will need to skip ahead to just modeling the bare rocky surface below
+        if (disable_atmosphere == False):
+            if (opac['opacity_treatment'] == 'line_by_line'):
+
+                # Identify the opacity database being used
+                opacity_database = opac['opacity_database']
+
+                # Load the version of the opacity database
+                database_version = opac['database_version']
+
+                # Unpack pre-computed Rayleigh cross sections
+                Rayleigh_stored = opac['Rayleigh_stored']
+
+                # Calculate extinction coefficients in line-by-line mode        
+                kappa_gas, kappa_Ray, kappa_cloud = extinction_LBL(chemical_species, active_species, 
+                                                                CIA_pairs, ff_pairs, bf_species, 
+                                                                n, T, P, wl, X, X_active, X_CIA, 
+                                                                X_ff, X_bf, a, gamma, P_cloud,
+                                                                kappa_cloud_0, Rayleigh_stored, 
+                                                                enable_haze, enable_deck,
+                                                                enable_surface, N_sectors, 
+                                                                N_zones, P_surf, opacity_database, 
+                                                                disable_continuum, suppress_print,
+                                                                database_version)
+                
+            # If using opacity sampling, we can use pre-interpolated cross sections
+            elif (opac['opacity_treatment'] == 'opacity_sampling'):
+
+                # Unpack pre-interpolated cross sections
+                sigma_stored = opac['sigma_stored']
+                CIA_stored = opac['CIA_stored']
+                Rayleigh_stored = opac['Rayleigh_stored']
+                ff_stored = opac['ff_stored']
+                bf_stored = opac['bf_stored']
+                aerosol_stored = opac['aerosol_stored']
+
+                # Also unpack fine temperature and pressure grids from pre-interpolation
+                T_fine = opac['T_fine']
+                log_P_fine = opac['log_P_fine']
+
+                # Running POSEIDON on the CPU
+                if (device == 'cpu'):
+                    
+                    # If the cloud model is Mie, need to parse out 
+                    # How the cloud type is defined and whether or not 
+                    # aerosol grid is being used or not 
+                    if (model['cloud_model'] == 'Mie'):
+
+                        n_aerosol, sigma_ext_cloud, \
+                        g_cloud, w_cloud = compute_relevant_Mie_properties(model, aerosol_species, aerosol_stored,
+                                                                                                        P, wl, r, H, n,
+                                                                                                        r_m, r_i_real, r_i_complex,
+                                                                                                        P_cloud, P_cloud_bottom, log_X_Mie,
+                                                                                                        log_n_max, fractional_scale_height,
+                                                                                                        lognormal_logwidth_free, log_r_m_std_dev,
+                                                                                                        )
+
+                    else:
+
+                        # Generate empty arrays so the dark god numba is satisfied
+                        n_aerosol = []
+                        sigma_ext_cloud = []
+                            
+                        n_aerosol.append(np.zeros_like(r))
+                        sigma_ext_cloud.append(np.zeros_like(wl))
+
+                        n_aerosol = np.array(n_aerosol)
+                        sigma_ext_cloud = np.array(sigma_ext_cloud)
+
+                        w_cloud = np.zeros_like(wl)
+                        g_cloud = np.zeros_like(wl)
+
+                    # Calculate extinction coefficients in standard mode
+
+                    # Numba will get mad if P_cloud is not an array (because you can have more than one cloud)
+                    # This line just makes sure that P_cloud is an array 
+                    if isinstance(P_cloud, np.ndarray) == False:
+                        P_cloud = np.array([P_cloud])
+
+                    # Create the kappa arrays
+                    kappa_gas, kappa_Ray, \
+                    kappa_cloud, kappa_cloud_seperate = extinction(chemical_species, active_species,
+                                                                                        CIA_pairs, ff_pairs, bf_species,
+                                                                                        n, T, P, wl, X, X_active, X_CIA, 
+                                                                                        X_ff, X_bf, a, gamma, P_cloud, 
+                                                                                        kappa_cloud_0, sigma_stored, 
+                                                                                        CIA_stored, Rayleigh_stored, 
+                                                                                        ff_stored, bf_stored, enable_haze, 
+                                                                                        enable_deck, enable_surface,
+                                                                                        N_sectors, N_zones, T_fine, 
+                                                                                        log_P_fine, P_surf, enable_Mie, 
+                                                                                        n_aerosol, sigma_ext_cloud)
+                    
+                    # If we read in an eddysed file (from PICASO or VIRGA) that
+                    # contains the single scattering albedo, asymmetry parameter, or kappa_cloud
+                    if model['cloud_model'] == 'eddysed':
+
+                        # Shenanigans so that the eddysed/picaso arrays work with whats already in POSEIDON
+                        w_cloud_array = []
+                        g_cloud_array = []
+                        kappa_cloud_seperate = []
+
+                        w_cloud_array.append(w_cloud_eddysed)
+                        g_cloud_array.append(g_cloud_eddysed)
+                        kappa_cloud_seperate.append(kappa_cloud_eddysed)
+
+                        w_cloud = np.array(w_cloud_array)
+                        g_cloud = np.array(g_cloud_array)
+                        kappa_cloud = np.array(kappa_cloud_eddysed)
+                        kappa_cloud_seperate = np.array(kappa_cloud_seperate)
+                    
+                    # Else, we need w and g from the precomputed aerosol database
+                    # We loop over each aerosol species and reshape the w and g arrays to have the same 
+                    # 4d shape as the kappa arrays 
+                    # They are then looped over in toon emission and toon reflection 
+                    elif thermal_scattering == True or reflection == True:
+
+                        # Intialize w_cloud and g_cloud arrays
+                        # Shape = (Aerosol_species, pressure, sector, zone, wl)
+                        w_cloud_array = []
+                        g_cloud_array = []
+
+                        if ((model['cloud_type'] == 'opaque_deck_plus_slab') or (model['cloud_type'] == 'opaque_deck_plus_uniform_X')
+                            or (model['cloud_type'] == 'shiny_opaque_deck_plus_slab') or (model['cloud_type'] == 'shiny_opaque_deck_plus_uniform_X')):
+                            #Adds a fake layer of w and g which, when multiplied by kappa_deck, will give 0 opacity anyways
+                            w_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
+                            g_cloud_array.append((np.zeros_like(kappa_cloud)).tolist())
+
+                        if len(aerosol_species) != 0:
+                            for aerosol in range(len(w_cloud)):
+                                # For each w and g for each aerosol, make it have the same shape as kappa_cloud
+                                # turn into a list so it doesn't end up being an array of arrays 
+                                w_cloud_array.append((np.ones_like(kappa_cloud)*w_cloud[aerosol]).tolist())
+                                g_cloud_array.append((np.ones_like(kappa_cloud)*g_cloud[aerosol]).tolist())
+                        else:
+                            # Just a list of 0s
+                            w_cloud_array.append((np.ones_like(kappa_gas)*w_cloud).tolist())
+                            g_cloud_array.append((np.ones_like(kappa_gas)*g_cloud).tolist())
+                        
+                        # Turn into an array so numba in toon functions is happy with indexing 
+                        w_cloud = np.array(w_cloud_array)
+                        g_cloud = np.array(g_cloud_array)
+                    
+                    # two doesn't work for transmission right now 
+                    elif spectrum_type == 'transmission' and (len(aerosol_species) == 2) and (cloud_dim == 2):
+                        raise Exception('Cannot do patchy multiple clouds in transmission yet (Reach out to Elijah Mullens if you need this)')
+
+                    # If there is a surface or if there there is an albedo deck 
+                    # Note that albedo deck is treated like a surface below
+                    if surface == True or albedo_deck != -1:
+                        
+                        if surface == True:
+                            if surface_model == 'gray':
+                                surf_reflect = np.zeros_like(wl)
+                                surf_reflect_array = []
+                            
+                            elif surface_model == 'constant':
+                                surf_reflect = np.full_like(wl, albedo_surf)
+                                surf_reflect_array = []
+
+                            elif surface_model == 'lab_data':
+                                surf_reflect_array = interpolate_surface_components(wl,surface_components,surface_component_albedos)
+
+                                # If we are to apply surface percentages to the albedos (not the models)
+                                if surface_percentage_apply_to == 'albedos':
+                                    surf_reflect = np.zeros_like(wl)
+                                    for n in range(len(surface_component_percentages)):
+                                        surf_reflect += surface_component_percentages[n]*surf_reflect_array[n]
+
+                                else:
+                                    surf_reflect = np.full_like(wl, -1)  
+                        else:
+                            surf_reflect = np.full_like(wl, albedo_deck)
+                            surf_reflect_array = []
+
+                    # Make a dummy surf_reflect array so that the numba gods are happy in the toon functions 
+                    else:
+                        surf_reflect = np.full_like(wl, -1) 
+                        surf_reflect_array = []
+                
+
+                # Running POSEIDON on the GPU
+                elif (device == 'gpu'):
+
+                    N_wl = len(wl)     # Number of wavelengths on model grid
+                    N_layers = len(P)  # Number of layers
+
+                    # Define extinction coefficient arrays explicitly on GPU
+                    kappa_gas = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
+                    kappa_Ray = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
+                    kappa_cloud = cp.zeros(shape=(N_layers, N_sectors, N_zones, N_wl))
+
+                    # Find index of deep pressure below which atmosphere is opaque
+                    P_deep = 1000       # Default value of P_deep (needs to be high for brown dwarfs)
+                    i_bot = np.argmin(np.abs(P - P_deep))
+
+                    # Store length variables for mixing ratio arrays 
+                    N_species = len(chemical_species)        # Number of chemical species
+                    N_species_active = len(active_species)   # Number of spectrally active species
+                    
+                    N_cia_pairs = len(CIA_pairs)             # Number of cia pairs included
+                    N_ff_pairs = len(ff_pairs)               # Number of free-free pairs included
+                    N_bf_species = len(bf_species)           # Number of bound-free species included
+                
+                    # Calculate extinction coefficients in standard mode
+                    extinction_GPU[block, thread](kappa_gas, kappa_Ray, kappa_cloud, i_bot, 
+                                                N_species, N_species_active, N_cia_pairs, 
+                                                N_ff_pairs, N_bf_species, n, T, P, wl, 
+                                                X, X_active, X_CIA, X_ff, X_bf, a, 
+                                                gamma, P_cloud, kappa_cloud_0, 
+                                                sigma_stored, CIA_stored, 
+                                                Rayleigh_stored, ff_stored, bf_stored, 
+                                                enable_haze, enable_deck,
+                                                enable_surface, N_sectors, N_zones, 
+                                                T_fine, log_P_fine, P_surf, P_deep)
+                
+        # If there is no atmosphere, but there is a surface, then the albedos still need to be read in 
+        elif disable_atmosphere == True and surface == True:
+
+            if surface_model == 'gray':
+                surf_reflect = np.zeros_like(wl)
+                surf_reflect_array = []
+            
+            elif surface_model == 'constant':
+                surf_reflect = np.full_like(wl, albedo_surf)
+                surf_reflect_array = []
+
+            elif surface_model == 'lab_data':
+                surf_reflect_array = interpolate_surface_components(wl,surface_components,surface_component_albedos)
+
+                # If we are to apply surface percentages to the albedos (not the models)
+                if surface_percentage_apply_to == 'albedos':
+                    surf_reflect = np.zeros_like(wl)
+                    for n in range(len(surface_component_percentages)):
+                        surf_reflect += surface_component_percentages[n]*surf_reflect_array[n]
+
+                else:
+                    surf_reflect = np.full_like(wl, -1)  
 
     # Generate transmission spectrum        
     if (spectrum_type == 'transmission'):
