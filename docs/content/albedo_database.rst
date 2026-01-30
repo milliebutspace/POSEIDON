@@ -10,8 +10,9 @@ ___________________________
 Many of the albedos curated in the databse are linked to specific minerals and rocks.
 
 In order to foster future collaboration between geologists and exoplanet scientists, 
-in the appendix of `Mullens et al (2026) <link>`_ (the POSEIDON v1.4 paper) there are 
+in the appendix of Mullens et al 2026 (the POSEIDON v1.4 paper) there are 
 supplemental tables developed to elucidate the albedos included in this database. 
+If unfamiliar with different rocks and minerals, we reccomend users to read these tables. 
 The full list of tables can be found `here <../_static/Mullens2026.pdf>`_
 
 For a primer on relevant geology terms and their connection to exoplanet science, see 
@@ -32,6 +33,17 @@ ___________________________
 As of POSEIDON v1.4, a fresh install of POSEIDON comes with a surface_reflectivies folder 
 in the inputs folder. This folder contains the pre-included surface albedos (as .txt files) 
 from the following sources. The last portion of the albedo name signifigies its source (i.e., _H12 = Hu 2012)
+
+All albedos presented in the database are in the form directional-hemispherical reflectances
+(with the exception of the albedos from Goodis Gordon (2025), see Table A7). 
+
+Users can simply add their own lab data: just generate a txt file with the first column being 
+wavelength, second column being albedo, and place it in the 'surface_reflectivities' folder. 
+POSEIDON will automatically detect whether or not their is a txt file with the name matching 
+that of the albedo defined in the 'surface_components' list in model initialization. 
+
+We recommend that users try to ensure that their data is in the form of directional-hemispherical 
+reflectance (for more details, see Appendix A in Mullens et al (2026)).
 
 `Hu (2012) [H12] <https://ui.adsabs.harvard.edu/abs/2012ApJ...752....7H/abstract>`_
 :math:`\hookrightarrow ` Txt files found `here <https://github.com/MartianColonist/POSEIDON/tree/Mie-HotFix-w-Surfaces/POSEIDON/reference_data/surface_reflectivities_txt_files/Hu2012-H12>`_ 
@@ -91,3 +103,26 @@ ___________________________
 .. image:: ../_static/opacity_previews/surfaces/Colors.png
    :width: 50
    :align: center
+
+
+Additional Resources 
+___________________________
+
+These are additional figures that can be used, alongside the Appendix tables, to better understand 
+entries in the surface albedo database. 
+
+Mineral composition of igenous rocks
+
+.. image:: ../_static/opacity_previews/surfaces/igenous_rocks.png
+   :width: 50
+   :align: center
+
+:math:`\hookrightarrow ` sourced from `here <https://pressbooks.bccampus.ca/geoclone/chapter/7-3-classification-of-igneous-rocks-2/>`_ 
+
+Total-Alkali Silica diagram 
+
+.. image:: ../_static/opacity_previews/surfaces/tas_diagram.png
+   :width: 50
+   :align: center
+
+:math:`\hookrightarrow ` sourced from `here <https://www.mindat.org/glossary/tas_classification>`_ 
