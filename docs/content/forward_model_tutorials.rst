@@ -19,6 +19,7 @@ Exoplanet Transit Spectroscopy
    notebooks/transmission_terrestrial
    notebooks/transmission_2D
    notebooks/transmission_contributions
+   notebooks/transmission_stellar_contamination
 
 
 Exoplanet Eclipse Spectroscopy
