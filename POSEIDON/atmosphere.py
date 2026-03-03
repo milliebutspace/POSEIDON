@@ -1158,7 +1158,6 @@ def add_bulk_component(P, T, X_param, N_species, N_sectors, N_zones,
 
     # For H2+H+He bulk mixture with dissociation
     elif ('H2' and 'H' and 'He' in bulk_species):
-
         # Determine background gas total mixing ratio (H2 + H + He)
         X_bulk = 1.0 - np.sum(X_param, axis=0)
 
@@ -1187,8 +1186,6 @@ def add_bulk_component(P, T, X_param, N_species, N_sectors, N_zones,
                 X[2,:,j,k] = X_He
         
     # For any other choice of bulk species, the first mixing ratio is the bulk species
-    else: 
-
         if (len(bulk_species) > 1):
             raise Exception("Only a single species can be designated as bulk " +
                             "(besides models with H2 & He or H & He with a fixed He/H2 ratio).")
@@ -1894,7 +1891,8 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
              He_fraction, T_input, X_input, P_param_set, 
              log_P_slope_phot, log_P_slope_arr, Na_K_fixed_ratio,
              constant_gravity = False, chemistry_grid = None,
-             PT_penalty = False, T_eq = None, mu_back = None):
+             PT_penalty = False, T_eq = None, mu_back = None,
+             disable_atmosphere = False):
     '''
     Main function to calculate the vertical profiles in each atmospheric 
     column. The profiles cover the temperature, number density, mean molecular 
@@ -1985,6 +1983,8 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
             Note: not the same as T_equ, the free parameter in Guillot profile.
         mu_back (float):
             Mean molecular mass of background gas, if bulk_species = ['ghost'] (AMU).
+        disable_atmosphere (bool):
+            If True, returns a flat planetary transmission spectrum @ (Rp/R*)^2
     
     Returns:
         T (3D np.array of float):
@@ -2016,6 +2016,10 @@ def profiles(P, R_p, g_0, PT_profile, X_profile, PT_state, P_ref, R_p_ref,
     
     '''
 
+    # If disable_atamosphere is True, just return the following 
+    if disable_atmosphere == True:
+        return 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, True
+    
     # For an isothermal profile
     if (PT_profile == 'isotherm'):
         

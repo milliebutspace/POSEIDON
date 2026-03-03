@@ -1324,6 +1324,7 @@ def plot_spectra(spectra, planet, data_properties = None, show_data = False,
                  legend_fontsize = 10, plt_label_fontsize = 14,
                  planet_name_fontsize = 16, plot_style = 'standard',
                  fill_between = [], fill_between_alpha = 0.5, fill_to_spectrum = [],
+                 fill_to_spectrum_list = []
                  ):
     ''' 
     Plot a collection of individual model spectra. This function can plot
@@ -2026,14 +2027,46 @@ def plot_spectra(spectra, planet, data_properties = None, show_data = False,
             
             if len(fill_between) != 0:
                 if fill_between[i] == True:
-                    if len(fill_to_spectrum) == 0:
-                        ax1.fill_between(wl_binned, spec_binned, y2 = 0, 
-                                         alpha=fill_between_alpha,
-                                         color = colour_binned)
+                    # If there is more than one alpha being used 
+                    if isinstance(fill_between_alpha, list):
+                        if len(fill_to_spectrum) == 0:
+                            ax1.fill_between(wl_binned, spec_binned, y2 = 0, 
+                                            alpha=fill_between_alpha[i],
+                                            color = colour_binned)
+                        else:
+                            if len(fill_to_spectrum_list) != 0:
+                                if fill_to_spectrum_list[i] == True:
+                                    ax1.fill_between(wl_binned, spec_binned, y2 = fill_to_spectrum_binned,
+                                                    alpha=fill_between_alpha[i],
+                                                    color = colour_binned)    
+                                else:
+                                    ax1.fill_between(wl_binned, spec_binned, y2 = 0,
+                                                    alpha=fill_between_alpha[i],
+                                                    color = colour_binned)  
+                            else:
+                                ax1.fill_between(wl_binned, spec_binned, y2 = fill_to_spectrum_binned,
+                                                alpha=fill_between_alpha[i],
+                                                color = colour_binned)      
+                    # One alpha being used
                     else:
-                        ax1.fill_between(wl_binned, spec_binned, y2 = fill_to_spectrum,
-                                         alpha=fill_between_alpha,
-                                         color = colour_binned)  
+                        if len(fill_to_spectrum) == 0:
+                            ax1.fill_between(wl_binned, spec_binned, y2 = 0, 
+                                            alpha=fill_between_alpha,
+                                            color = colour_binned)
+                        else:
+                            if len(fill_to_spectrum_list) != 0:
+                                if fill_to_spectrum_list[i] == True:
+                                    ax1.fill_between(wl_binned, spec_binned, y2 = fill_to_spectrum_binned,
+                                                    alpha=fill_between_alpha,
+                                                    color = colour_binned)    
+                                else:
+                                    ax1.fill_between(wl_binned, spec_binned, y2 = 0,
+                                                    alpha=fill_between_alpha,
+                                                    color = colour_binned)  
+                            else:
+                                ax1.fill_between(wl_binned, spec_binned, y2 = fill_to_spectrum_binned,
+                                                alpha=fill_between_alpha,
+                                                color = colour_binned) 
             
             N_plotted_binned += 1
 
@@ -2261,6 +2294,10 @@ def plot_data(data, planet_name, wl_min = None, wl_max = None,
               show_data_bin_width = True, show_data_cap = True,
               data_alpha = 0.8, data_edge_width = 0.8,
               ax = None, save_fig = True,
+              x_tick_fontsize = 12, x_label_fontsize = 16,
+              y_tick_fontsize = 12, y_label_fontsize = 16,
+              legend_fontsize = 10, plt_label_fontsize = 14,
+              planet_name_fontsize = 16,
               ):
     ''' 
     Plot a collection of datasets. This function can plot transmission or 
@@ -2316,6 +2353,20 @@ def plot_data(data, planet_name, wl_min = None, wl_max = None,
             Matplotlib axis provided externally.
         save_fig (bool, optional):
             If True, saves a PDF in the POSEIDON output folder.
+        x_tick_fontsize (int, optional):
+            Font size for x-axis tick labels.
+        x_label_fontsize (int, optional):
+            Font size for x-axis label.
+        y_tick_fontsize (int, optional):
+            Font size for y-axis tick labels.
+        y_label_fontsize (int, optional):
+            Font size for y-axis label.
+        legend_fontsize (int, optional):
+            Font size for the legend.
+        plt_label_fontsize (int, optional):
+            Font size for the plot label.
+        planet_name_fontsize (int, optional):
+            Font size for the planet name.
 
     Returns:
         fig (matplotlib figure object):
@@ -2542,37 +2593,37 @@ def plot_data(data, planet_name, wl_min = None, wl_max = None,
     ax1.set_ylim([y_range[0], y_range[1]])
         
     # Set axis labels
-    ax1.set_xlabel(r'Wavelength (μm)', fontsize = 16)
+    ax1.set_xlabel(r'Wavelength (μm)', fontsize = x_label_fontsize)
 
     if (plot_type == 'transmission'):
         if (y_unit == 'transit_depth_ppm'):
-            ax1.set_ylabel(r'Transit Depth (ppm)', fontsize = 16)
+            ax1.set_ylabel(r'Transit Depth (ppm)', fontsize = y_label_fontsize)
         else:
             if (y_min_plt < 0.10):
-                ax1.set_ylabel(r'Transit Depth $(R_p/R_*)^2$', fontsize = 16)
+                ax1.set_ylabel(r'Transit Depth $(R_p/R_*)^2$', fontsize = y_label_fontsize)
             else:
-                ax1.set_ylabel(r'Transit Depth', fontsize = 16)
+                ax1.set_ylabel(r'Transit Depth', fontsize = y_label_fontsize)
     elif (plot_type == 'planet_star_radius_ratio'):
-        ax1.set_ylabel(r'$R_p/R_*$', fontsize = 16)
+        ax1.set_ylabel(r'$R_p/R_*$', fontsize = y_label_fontsize)
     elif (plot_type == 'emission'):
         if (y_unit == 'eclipse_depth_ppm'):
-            ax1.set_ylabel(r'Eclipse Depth $(ppm)$', fontsize = 16)
+            ax1.set_ylabel(r'Eclipse Depth $(ppm)$', fontsize = y_label_fontsize)
         else:
-            ax1.set_ylabel(r'Emission Spectrum $(F_p/F_*)$', fontsize = 16)
+            ax1.set_ylabel(r'Emission Spectrum $(F_p/F_*)$', fontsize = y_label_fontsize)
     elif (plot_type == 'direct_emission'):
         if (y_unit == 'Fp'):
-            ax1.set_ylabel(r'$F_{\rm{p}}$ (W m$^{-2}$ m$^{-1}$)', fontsize = 16)
+            ax1.set_ylabel(r'$F_{\rm{p}}$ (W m$^{-2}$ m$^{-1}$)', fontsize = y_label_fontsize)
         elif (y_unit in ['Fs', 'F*']):
-            ax1.set_ylabel(r'$F_{\rm{s}}$ (W m$^{-2}$ m$^{-1}$)', fontsize = 16)
+            ax1.set_ylabel(r'$F_{\rm{s}}$ (W m$^{-2}$ m$^{-1}$)', fontsize = y_label_fontsize)
 
     # Add planet name label
     ax1.text(0.02, 0.96, planet_name, horizontalalignment='left', 
-             verticalalignment='top', transform=ax1.transAxes, fontsize = 16)
+             verticalalignment='top', transform=ax1.transAxes, fontsize = planet_name_fontsize)
   
     # Add plot label
     if (plt_label != None):
         ax1.text(0.03, 0.90, plt_label, horizontalalignment='left', 
-                 verticalalignment='top', transform=ax1.transAxes, fontsize = 14)
+                 verticalalignment='top', transform=ax1.transAxes, fontsize = plt_label_fontsize)
 
     # Decide at which wavelengths to place major tick labels
     wl_ticks = set_spectrum_wl_ticks(wl_min, wl_max, wl_axis)
@@ -2580,17 +2631,21 @@ def plot_data(data, planet_name, wl_min = None, wl_max = None,
     # Plot wl tick labels
     ax1.set_xticks(wl_ticks)
 
+    # Set the x and y tick font sizes
+    ax1.tick_params(axis='x', labelsize=x_tick_fontsize)
+    ax1.tick_params(axis='y', labelsize=y_tick_fontsize)
+
     # Add box around legend
     if (legend_box == True) and (legend_location != 'outside right'):
-        legend = ax1.legend(loc = legend_location, shadow = True, prop = {'size':10}, 
+        legend = ax1.legend(loc = legend_location, shadow = True, prop = {'size':legend_fontsize}, 
                             ncol = 1, frameon = True)    # Legend settings
         frame = legend.get_frame()
         frame.set_facecolor('0.90') 
     elif legend_location == 'outside right':
-        legend = ax1.legend(loc='center left', shadow = True, prop = {'size':10}, 
+        legend = ax1.legend(loc='center left', shadow = True, prop = {'size':legend_fontsize}, 
                             ncol = 1, frameon=False,bbox_to_anchor=(1, 0.5))  
     else:
-        legend = ax1.legend(loc=legend_location, shadow = True, prop = {'size':10}, 
+        legend = ax1.legend(loc=legend_location, shadow = True, prop = {'size':legend_fontsize}, 
                             ncol = 1, frameon = False)    # Legend settings
         
     plt.tight_layout()
@@ -2644,6 +2699,8 @@ def plot_spectra_retrieved(spectra_median, spectra_low2, spectra_low1,
                            y_tick_fontsize = 12, y_label_fontsize = 16,
                            legend_fontsize = 10, plt_label_fontsize = 14,
                            planet_name_fontsize = 16, plot_style = 'standard',
+                           fill_between = [], fill_between_alpha = 0.5, fill_to_spectrum = [],
+                           fill_to_spectrum_list = []
                            ):
     ''' 
     Plot a collection of individual model spectra. This function can plot
@@ -2785,6 +2842,13 @@ def plot_spectra_retrieved(spectra_median, spectra_low2, spectra_low1,
             Font size for the planet name.
         plot_style (str, optional):
             (Experimental!) plot style ('standard' or 'fancy').
+        fill_between (list of bools, optional):
+            If True, spectrum will have a fill color from its 
+            line to 0 or fill_to_spectrum.
+        fill_between_alpha (int, optional):
+            Alpha of the fill region.
+        fill_to_spectrum (list of ints, optional):
+            If non-empty, will fill spectra to this spectrum (instead of 0).
      
     Returns:
         fig (matplotlib figure object):
@@ -2842,6 +2906,8 @@ def plot_spectra_retrieved(spectra_median, spectra_low2, spectra_low1,
         raise Exception("Number of line styles does not match number of spectra.")
     if ((len(line_alpha_list) != 0) and (N_spectra != len(line_alpha_list))):
         raise Exception("Number of line alphas does not match number of spectra.")
+    if ((fill_between != []) and (N_spectra != len(fill_between))):
+        raise Exception("Bools in fill_between array must equal number of spectra.")
 
     # Define colours for plotted spectra (default or user choice)
     if (len(colour_list) == 0):   # If user did not specify a custom colour list
@@ -3375,6 +3441,52 @@ def plot_spectra_retrieved(spectra_median, spectra_low2, spectra_low1,
             ax1.scatter(wl_data, ymodel_median, color = binned_colours[i], 
                         s=5, marker='D', lw=0.5, alpha=0.8, edgecolor='black',
                         label = label_i + r' (Binned)', zorder = 200)
+        
+        if len(fill_to_spectrum) != 0:
+            wl_binned, fill_to_spectrum_binned, _ = bin_spectrum(wl, fill_to_spectrum, R_to_bin)
+            
+        if len(fill_between) != 0:
+            if fill_between[i] == True:
+                # If there is more than one alpha being used 
+                if isinstance(fill_between_alpha, list):
+                    if len(fill_to_spectrum) == 0:
+                        ax1.fill_between(wl_binned, spec_med_binned, y2 = 0, 
+                                        alpha=fill_between_alpha[i],
+                                        color = colours[i])
+                    else:
+                        if len(fill_to_spectrum_list) != 0:
+                            if fill_to_spectrum_list[i] == True:
+                                ax1.fill_between(wl_binned, spec_med_binned, y2 = fill_to_spectrum_binned,
+                                                alpha=fill_between_alpha[i],
+                                                color = colours[i])    
+                            else:
+                                ax1.fill_between(wl_binned, spec_med_binned, y2 = 0,
+                                                alpha=fill_between_alpha[i],
+                                                color = colours[i])  
+                        else:
+                            ax1.fill_between(wl_binned, spec_med_binned, y2 = fill_to_spectrum_binned,
+                                            alpha=fill_between_alpha[i],
+                                            color = colours[i])      
+                # One alpha being used
+                else:
+                    if len(fill_to_spectrum) == 0:
+                        ax1.fill_between(wl_binned, spec_med_binned, y2 = 0, 
+                                        alpha=fill_between_alpha,
+                                        color = colours[i])
+                    else:
+                        if len(fill_to_spectrum_list) != 0:
+                            if fill_to_spectrum_list[i] == True:
+                                ax1.fill_between(wl_binned, spec_med_binned, y2 = fill_to_spectrum_binned,
+                                                alpha=fill_between_alpha,
+                                                color = colours[i])    
+                            else:
+                                ax1.fill_between(wl_binned, spec_med_binned, y2 = 0,
+                                                alpha=fill_between_alpha,
+                                                color = colours[i])  
+                        else:
+                            ax1.fill_between(wl_binned, spec_med_binned, y2 = fill_to_spectrum_binned,
+                                            alpha=fill_between_alpha,
+                                            color = colours[i]) 
             
     # Overplot datapoints
     for i in range(N_datasets):
@@ -3574,8 +3686,15 @@ def plot_PT_retrieved(planet_name, PT_median, PT_low2, PT_low1, PT_high1,
                       TwoD_type = None, plt_label = None, show_profiles = [],
                       PT_labels = [], colour_list = [], log_P_min = None,
                       log_P_max = None, T_min = None, T_max = None,
-                      legend_location = 'lower left', ax = None, 
-                      save_fig = True, sigma_to_plot = 2):
+                      legend_location = 'lower left',
+                      ax = None, save_fig = True,
+                      sigma_to_plot = 2,
+                      show_legend = True,
+                      custom_ticks = [],
+                      ylabels = True,
+                      retrieved_log_P_surf = [],
+                      log_P_surf_sigma_upper_lower = 'upper',
+                      log_P_surf_histogram_list = []):
     '''
     Plot retrieved Pressure-Temperature (P-T) profiles.
     
@@ -3622,6 +3741,16 @@ def plot_PT_retrieved(planet_name, PT_median, PT_low2, PT_low1, PT_high1,
             Maximum temperature to plot.
 		legend_location (str, optional):
             Location of the legend. Default is 'lower left'.
+		show_legend (bool, optional):
+            If False, will not show legend.
+        custom_ticks (list, optional): 
+            Major and minor ticks
+        ylabels (bool, optional):
+            If False, will not plot y ticks
+        retrieved_log_P_surf (list, optional):
+            Will overplot 1 sigma P_surf (Retrieved log_P_surf, one_sigma_positive, one_sigma_negative)
+        log_P_surf_sigma_upper_lower (str, optional):
+            Will set things depending on if its an upper or lower limit or unconstrained
 	
     Returns:
 		fig (matplotlib figure object):
@@ -3681,12 +3810,16 @@ def plot_PT_retrieved(planet_name, PT_median, PT_low2, PT_low1, PT_high1,
     T_range = T_max - T_min
     
     # Calculate appropriate axis spacing
-    if (T_range >= 500.0):
-        major_spacing = max(np.around((T_range/10), -2), 100.0)
-    elif (T_range < 500.0):
-        major_spacing = max(np.around((T_range/10), -1), 10.0)
-        
-    minor_spacing = major_spacing/10
+    if (len(custom_ticks) == 0):
+        if (T_range >= 500.0):
+            major_spacing = max(np.around((T_range/10), -2), 100.0)
+        elif (T_range < 500.0):
+            major_spacing = max(np.around((T_range/10), -1), 10.0)
+            
+        minor_spacing = major_spacing/10
+    else:
+        major_spacing = custom_ticks[0]
+        minor_spacing = custom_ticks[1]
 
     # Load pressure grid
     P = PT_median[0][1]
@@ -3767,18 +3900,113 @@ def plot_PT_retrieved(planet_name, PT_median, PT_low2, PT_low1, PT_high1,
         if (T_true != None):
             ax1.semilogy(T_true, P, lw = 1.5, color = 'crimson', label = 'True')
 
+    # Plot the retrieved surface pressure
+    # This assumes the distribution is a tailed distribution (rn)
+    if (len(retrieved_log_P_surf) != 0):
+
+        median_P_surf = 10**retrieved_log_P_surf[0]
+
+        # Note this is before things are flipped, so in order to keep it less confusing its top and bottom in traditional sense
+        # So this is actually the higher pressure, and will be bottom once axis if flipped
+
+        P_surf_high = 10**(retrieved_log_P_surf[0] + retrieved_log_P_surf[1])
+        P_surf_low = 10**(retrieved_log_P_surf[0] + retrieved_log_P_surf[2])
+
+        # If the arrow is up, it will point from the highest pressure to the lowest
+        # If the arrow is down, it will point from the lowest pressure to the highest 
+
+        if log_P_surf_sigma_upper_lower == 'upper':
+            #ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            ax1.axhline(P_surf_low, lw = 3.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure ($1 \sigma$ upper)')
+            ax1.axhspan(P_surf_low,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],)
+            ax1.axhspan(median_P_surf,P_surf_high, lw = 0.0, alpha = 0.25, color = colours[i])
+            #ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            
+            #ax1.axhspan(P_surf_low,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
+            #ax1.axhspan(median_P_surf,P_surf_high, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
+            ##ax1.axhspan(P_surf_low,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            #ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
+
+        elif log_P_surf_sigma_upper_lower == 'lower':
+            ax1.axhspan(median_P_surf,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray')
+            ax1.axhline(P_surf_high, lw = 3.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure ($1 \sigma$ lower)')
+            ax1.axhspan(P_surf_high,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],)
+            ax1.axhspan(median_P_surf,P_surf_low, lw = 0.0, alpha = 0.25, color = colours[i],)
+            ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray',)
+            #ax1.axhspan(P_surf_high,median_P_surf, lw = 0.0, alpha = 0.5, color = colours[i],  hatch = 'xx')
+            #ax1.axhspan(median_P_surf,P_surf_low, lw = 0.0, alpha = 0.25, color = colours[i],  hatch = 'x')
+            #ax1.axhspan(P_surf_high,np.max(P), lw = 0.0, alpha = 0.5, color = 'darkgray', hatch = '+++')
+
+        ax1.axhline(median_P_surf, lw = 1.0, color = scale_lightness(colours[i], 1.0), label = 'Surface Pressure (Median)')
+
+        # Draw arrow (either up or down to P_surf_low)
+        #if arrow_P_surf == 'up':
+        #    x = arrow_x
+        #    y = median_P_surf
+        #    dx = 0
+        #    dy = -(median_P_surf - P_surf_low)
+        #    ax1.arrow(x,y,dx,dy, color = colours[i],length_includes_head = True,
+        #  head_width=50, head_length=0.1*np.abs(dy))
+        #elif arrow_P_surf == 'down':
+        #    x = arrow_x
+        #    dy = median_P_surf - P_surf_low
+        #    dx = 0
+        #    y = P_surf_low
+        #    ax1.arrow(x,y,dx,dy, color = colours[i],length_includes_head = True,
+        #  head_width=50, head_length=0.1*np.abs(dy))
+
+    if len(log_P_surf_histogram_list) != 0:
+        log_P_surf_histogram_bool = log_P_surf_histogram_list[0]
+        if log_P_surf_histogram_bool == True:
+            planet = log_P_surf_histogram_list[1]
+            model =  log_P_surf_histogram_list[2]
+            log_P_surf_title = log_P_surf_histogram_list[3]
+
+            ax_histy = ax1.inset_axes([0.85, 0, 0.15, 1])
+
+            _ = plot_histograms(planet, [model], plot_parameters = ['log_P_surf'], 
+                                span = ((-6,2),(-6,2)),
+                                N_bins = [50,50],
+                                parameter_colour_list = colour_list,
+                                axes = [ax_histy], save_fig = False,
+                                tick_labelsize = 14,               
+                                title_fontsize = 16,                        
+                                alpha_hist = 0.7,
+                                show_title = True,
+                                orientation = 'horizontal',
+                                custom_labels = ['']
+                                )
+            
+            ax_histy.set_ylim(ax_histy.get_ylim()[::-1])
+
+            ax_histy.set_xticks([])
+            ax_histy.yaxis.set_label_position("right")
+            if log_P_surf_title == True:
+                ax_histy.set_ylabel('log P$_{\mathrm{surf}}$', rotation = 270, labelpad = 20, fontsize = 15)
+
+
+
+
     # Common plot settings for all profiles
     ax1.invert_yaxis()            
     ax1.set_xlabel(r'Temperature (K)', fontsize = 16)
     ax1.set_xlim(T_min, T_max)
-    ax1.set_ylabel(r'Pressure (bar)', fontsize = 16)
     ax1.set_ylim(np.power(10.0, log_P_max), np.power(10.0, log_P_min))
+
+    # If ylabels = False, don't show the ticks
+    if ylabels == False:
+        ax1.tick_params(labelleft=False) 
+    # Else, set the ylabel 
+    else:
+        ax1.set_ylabel(r'Pressure (bar)', fontsize = 16)
 
     ax1.tick_params(labelsize=12)
     
     # Add legend
-    legend = ax1.legend(loc=legend_location, shadow=True, prop={'size':10}, ncol=1, 
-                       frameon=False, columnspacing=1.0)
+    if show_legend == True:
+        legend = ax1.legend(loc=legend_location, shadow=True, prop={'size':10}, ncol=1, 
+                        frameon=False, columnspacing=1.0)
     
     fig.set_size_inches(9.0, 9.0)
 
@@ -4125,7 +4353,7 @@ def plot_stellar_flux(flux, wl, wl_min = None, wl_max = None, flux_min = None,
     return fig
 
 
-def plot_histogram(nbins, vals, colour, ax, shrink_factor, x_max_array, alpha_hist):
+def plot_histogram(nbins, vals, colour, ax, shrink_factor, x_max_array, alpha_hist, orientation):
     '''
     Function to plot a histogram of parameter values.
 
@@ -4156,15 +4384,23 @@ def plot_histogram(nbins, vals, colour, ax, shrink_factor, x_max_array, alpha_hi
     
     # Plot histogram
     x,w,patches = ax.hist(vals, bins=nbins, color=colour, histtype='stepfilled', 
-                          alpha=alpha_hist, edgecolor='None', density=True, stacked=True)
+                          alpha=alpha_hist, edgecolor='None', density=True, stacked=True,
+                          orientation = orientation)
 
     # Plot histogram border
     x,w,patches = ax.hist(vals, bins=nbins, histtype='stepfilled', lw = 0.8, 
-                          facecolor='None', density=True, stacked=True)
+                          facecolor='None', density=True, stacked=True,
+                          orientation = orientation)
     
-    x_max = np.max(x_max_array)
-        
-    ax.set_ylim(0, (1.1+shrink_factor)*x_max)
+    if orientation == 'vertical':
+        x_max = np.max(x_max_array)
+            
+        ax.set_ylim(0, (1.1+shrink_factor)*x_max)
+    
+    else:
+        x_max = np.max(x_max_array)
+            
+        ax.set_xlim(0, (1.1+shrink_factor)*x_max)
     
     low3, low2, low1, median, high1, high2, high3 = confidence_intervals(len(vals), vals, 0)
     
@@ -4172,7 +4408,7 @@ def plot_histogram(nbins, vals, colour, ax, shrink_factor, x_max_array, alpha_hi
 
 
 def plot_parameter_panel(ax, param_vals, N_bins, param_min, param_max, 
-                         colour, x_max_array, alpha_hist):
+                         colour, x_max_array, alpha_hist, orientation):
     '''
     Setup function to plot the histogram panel for a given parameter.
 
@@ -4205,10 +4441,13 @@ def plot_parameter_panel(ax, param_vals, N_bins, param_min, param_max,
     
     
     # Plot histogram
-    _, low2, low1, median, high1, high2, _ = plot_histogram(N_bins, param_vals, colour, ax, 0.0, x_max_array, alpha_hist)
+    _, low2, low1, median, high1, high2, _ = plot_histogram(N_bins, param_vals, colour, ax, 0.0, x_max_array, alpha_hist, orientation)
 
     # Adjust x-axis extent
-    ax.set_xlim(param_min, param_max)
+    if orientation == 'vertical':
+        ax.set_xlim(param_min, param_max)
+    else:
+        ax.set_ylim(param_min, param_max)
 
     ax.tick_params(axis='both', which='major', labelsize=8)
 
@@ -4224,6 +4463,9 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                               custom_labels = [], custom_ticks = [],
                               alpha_hist = 0.4, show_title = True,
                               two_sigma_upper_limits_full = [], two_sigma_lower_limits_full = [],
+                              orientation = 'vertical',
+                              title_alpha_list = [], use_parameter_color_for_title = False,
+                              title_colour_list = []
                               ):
     '''
     Plot retrieved parameters as histograms.
@@ -4265,14 +4507,17 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
             Custom labels for the parameters. Default is empty list.
         custom_ticks (list, optional):
             Custom ticks for the parameters. Default is empty list.
-        alpha_hist (float, optional):
+        alpha_hist (float or list of floats, optional):
             Alpha value for histogram bars. Default is 0.4.
+            Can be a list for multiple histograms stacked. 
         show_title (bool, optional):
             Whether to show titles on the plots. Default is True.
         two_sigma_upper_limits_full (1D or 2D list of str, optional):
             Upper limits for two sigma confidence intervals. Default is empty list.
         two_sigma_lower_limits_full (1D or 2D list of str, optional):
             Lower limits for two sigma confidence intervals. Default is empty list.
+        use_parameter_color_for_title (bool):
+            If true, will use parameter color for title and constraints
 
     Returns:
         fig (matplotlib figure object):
@@ -4323,7 +4568,7 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
             ax = axes_in[q]
 
         # Set number of significant figures for titles
-        if ((('T' in param) or ('T_' in param)) and ('log' not in param)):
+        if ((('T' in param) or ('T_' in param)) and ('log' not in param) and ('percentage' not in param)):
             title_fmt = '.0f'
         elif (param == 'a') or (param == 'b'):
             title_fmt = ".2f"
@@ -4383,7 +4628,8 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                     param_max = span[q][1]
 
             x,w,patches = ax.hist(param_vals_m[:,q], bins=N_bins[q], color=colour, histtype='stepfilled', 
-                                  alpha=0.0, edgecolor='None', density=True, stacked=True)
+                                  alpha=0.0, edgecolor='None', density=True, stacked=True,
+                                  orientation = 'vertical')
             
             x_max_array.append(x.max())
 
@@ -4391,11 +4637,23 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
         for m in range(N_models):
 
             if (N_models == 1):
-                title_colour = 'black'
-                constraint_colour = 'dimgray'
+                if use_parameter_color_for_title == True:
+                    title_colour = parameter_colour_list[q]
+                    constraint_colour = parameter_colour_list[q]
+                elif len(title_colour_list) != 0:
+                    title_colour = title_colour_list[q]
+                    constraint_colour = title_colour_list[q]
+                else:
+                    title_colour = 'black'
+                    constraint_colour = 'dimgray'
             else:
-                title_colour = retrieval_colour_list[m]
-                constraint_colour = retrieval_colour_list[m]
+                # If there is no title colour list, just use retrieval color
+                if len(title_colour_list) != 0:
+                    title_colour = title_colour_list[m]
+                    constraint_colour = title_colour_list[m]
+                else:
+                    title_colour = retrieval_colour_list[m]
+                    constraint_colour = retrieval_colour_list[m]
 
             param_vals_m = param_vals[m]
             
@@ -4413,10 +4671,20 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                 param_min = span[q][0]
                 param_max = span[q][1]
 
+            # If alpha_hist is a list
+            if isinstance(alpha_hist,list):
+                try:
+                    alpha_hist_model = alpha_hist[m]
+                except:
+                    raise Exception('Make sure number of alpha hist is equal to models (if using a list instead of constant value).')
+            # Else its just a constant for all models
+            else:
+                alpha_hist_model = alpha_hist
+
             # Plot histogram
             low1, median, high1 = plot_parameter_panel(ax, param_vals_m[:,q], N_bins[q],
                                                        param_min, param_max, colour, x_max_array = x_max_array,
-                                                       alpha_hist = alpha_hist)
+                                                       alpha_hist = alpha_hist_model, orientation = orientation)
 
             # Add retrieval model labels to top left panel
             if ((row_idx == 0) and (column_idx == 0) and (len(retrieval_labels) != 0)):
@@ -4442,9 +4710,14 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                   #  ax.set_title(title, fontsize = title_fontsize)
 
                     # Plot median and +/- 1σ confidence intervals
-                    ax.axvline(median, lw=2, ls="-", alpha=0.7, color=constraint_colour)
-                    ax.axvline(low1, lw=1, ls="dashed", color=constraint_colour)
-                    ax.axvline(high1, lw=1, ls="dashed", color=constraint_colour)
+                    if orientation == 'vertical':
+                        ax.axvline(median, lw=2, ls="-", alpha=0.7, color=constraint_colour)
+                        ax.axvline(low1, lw=1, ls="dashed", color=constraint_colour)
+                        ax.axvline(high1, lw=1, ls="dashed", color=constraint_colour)
+                    else:
+                        ax.axhline(median, lw=2, ls="-", alpha=0.7, color=parameter_colour_list[q])
+                        ax.axhline(low1, lw=1, ls="dashed", color=parameter_colour_list[q])
+                        ax.axhline(high1, lw=1, ls="dashed", color=parameter_colour_list[q])  
 
                 # Title has 2 sigma upper/lower limits where user flags the given parameter
                 else:
@@ -4516,23 +4789,47 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                         title = "{0} = {1}".format(param_label, title)
 
                         # Plot median and +/- 1σ confidence intervals
-                        ax.axvline(median, lw=2, ls="-", alpha=0.7, color=constraint_colour)
-                        ax.axvline(low1, lw=1, ls="dashed", color=constraint_colour)
-                        ax.axvline(high1, lw=1, ls="dashed", color=constraint_colour)
-
-                
-                top_y = 1.05 + ((N_models-1)*title_vert_spacing)
+                        if orientation == 'vertical':
+                            ax.axvline(median, lw=2, ls="-", alpha=0.7, color=constraint_colour)
+                            ax.axvline(low1, lw=1, ls="dashed", color=constraint_colour)
+                            ax.axvline(high1, lw=1, ls="dashed", color=constraint_colour)
+                        else:
+                            ax.axhline(median, lw=2, ls="-", alpha=0.7, color=constraint_colour)
+                            ax.axhline(low1, lw=1, ls="dashed", color=constraint_colour)
+                            ax.axhline(high1, lw=1, ls="dashed", color=constraint_colour)                     
 
                 # Plot title
-                ax.text(0.5, top_y - (m * title_vert_spacing),
-                        title, horizontalalignment = "center", verticalalignment = "bottom",
-                        color = title_colour, transform = ax.transAxes, fontsize = title_fontsize,
-                       )
+                
+                # I prefer it flipped so that its in the order as plot_retrieved_spectra (EM)
+                top_y = 1.05 + ((N_models-1)*title_vert_spacing)
+
+                #ax.text(0.5, 1.05 + (m * 0.2),
+                #        title, horizontalalignment = "center", verticalalignment = "bottom",
+                #        color = title_colour, transform = ax.transAxes, fontsize = title_fontsize,
+                #       )
+                
+                # Normal orientation
+                if orientation == 'vertical':
+                    if (len(title_alpha_list) > 0):
+                        ax.text(0.5, top_y - (m *title_vert_spacing),
+                                title, horizontalalignment = "center", verticalalignment = "bottom",
+                                color = title_colour, transform = ax.transAxes, fontsize = title_fontsize,
+                                alpha = title_alpha_list[m])
+                    else:
+                        ax.text(0.5, top_y - (m *title_vert_spacing),
+                            title, horizontalalignment = "center", verticalalignment = "bottom",
+                            color = title_colour, transform = ax.transAxes, fontsize = title_fontsize,
+                            alpha = 1.0
+                        )
+                
+                # If its horizontal we don't add the name (its instead added in plot_PT_retrieved)
 
             else:
-
                 # Add param name to x-axis label instead
-                ax.set_xlabel(param_label, fontsize = title_fontsize)
+                if (len(title_alpha_list) > 0):
+                    ax.set_xlabel(param_label, fontsize = title_fontsize, alpha = title_alpha_list[m])
+                else:
+                    ax.set_xlabel(param_label, fontsize = title_fontsize, alpha = 1.0)
 
             ax.set_yticks([])
             ax.tick_params(axis='both', which='major', labelsize = tick_labelsize)
@@ -4544,7 +4841,7 @@ def plot_retrieved_parameters(axes_in, param_vals, plot_parameters, parameter_co
                 ax.xaxis.set_minor_locator(xminorLocator)
             
             # Better axis label spacing for temperatures
-            if ('T' in param):
+            if ('T' in param) and ('percentage' not in param):
                 if ((param_max - param_min) < 100):
                     xmajor_interval = 20
                     xminor_interval = 10
@@ -4689,7 +4986,10 @@ def plot_histograms(planet, models, plot_parameters,
                     title_fontsize = None, title_vert_spacing = None,
                     custom_labels = [], custom_ticks = [],
                     alpha_hist = 0.4, 
-                    two_sigma_upper_limits = [], two_sigma_lower_limits = []):
+                    two_sigma_upper_limits = [], two_sigma_lower_limits = [],
+                    orientation = 'vertical', title_alpha_list = [],
+                    use_parameter_color_for_title = False,
+                    title_colour_list = [],):
     '''
     Plot a set of histograms from one or more retrievals.
 
@@ -4747,8 +5047,9 @@ def plot_histograms(planet, models, plot_parameters,
             Custom labels for the parameters. Default is empty list.
         custom_ticks (list of list of float, optional):
             Custom ticks for the x-axis. Default is empty list.
-        alpha_hist (float, optional):
+        alpha_hist (float or list of floats, optional):
             Transparency for the histograms. Default is 0.4.
+            Can be a list (for each histogram)
         two_sigma_upper_limits (1D or 2D list of str, optional):
             List of parameters with two sigma upper limits. Default is empty list.
             If 1D, will apply two_sigma_upper_limit to all models. If 2D, will 
@@ -4757,6 +5058,11 @@ def plot_histograms(planet, models, plot_parameters,
             List of parameters with two sigma lower limits. Default is empty list.
             If 1D, will apply two_sigma_lower_limit to all models. If 2D, will 
             only do it for specific models. 
+        title_alpha_list (list of float):
+            If multiple models or retrievals are being plotted, can set 
+            One or more alphas in the cascade of titles on top of histogram.
+        use_parameter_color_for_title (bool):
+            If true, will use parameter color for title and constraints
 
     '''
 
@@ -4864,6 +5170,21 @@ def plot_histograms(planet, models, plot_parameters,
             param_names = np.array(external_param_names[m])
             samples = external_samples[m]
             N_samples = len(samples[:,0])
+
+            if ('mu' in plot_parameters) or ('mmw' in plot_parameters) or ('/' in str(plot_parameters)):
+
+                X_stored = np.zeros(shape=(N_samples, N_species))
+                mu_stored = np.zeros(shape=(N_samples))
+
+                # Load mixing ratios and mean molecular weight samples
+                for i in range(N_samples):
+
+                    atmosphere_i = get_retrieved_atmosphere(planet, model, np.logspace(np.log10(100.0), np.log10(1e-6), 100),
+                                                            specific_param_values = samples[i], R_p_ref_set=planet['planet_radius'])
+                    
+                    X_stored[i,:] = atmosphere_i['X'][:,0,0,0]
+                    mu_stored[i] = atmosphere_i['mu'][0,0,0]/sc.u
+
 
         # Create array to store parameter values for model m
         param_samples_m = np.zeros(shape=(N_samples, N_params_to_plot))
@@ -5031,6 +5352,10 @@ def plot_histograms(planet, models, plot_parameters,
                                     show_title = show_title,
                                     two_sigma_upper_limits_full = two_sigma_upper_limits,
                                     two_sigma_lower_limits_full = two_sigma_lower_limits,
+                                    orientation = orientation,
+                                    title_alpha_list = title_alpha_list,
+                                    use_parameter_color_for_title=use_parameter_color_for_title,
+                                    title_colour_list = title_colour_list 
                                     )
     
     # Save figure to file

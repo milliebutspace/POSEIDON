@@ -20,7 +20,7 @@ recent theoretical and experimental advances:
 * Improved line position accuracy for high-resolution analyses (i.e. ExoMol's MARVEL procedure).
 * UV-Visible wavelength coverage (down to :math:`0.2 \, \mathrm{\mu m}`, where available).
 
-Note: POSEIDON v1.3 uses the same opacity database as v1.2.
+Note: POSEIDON v1.4 uses the same opacity database as v1.2.
 
 The current line-by-line opacity sources included in POSEIDON are summarised below:
 
