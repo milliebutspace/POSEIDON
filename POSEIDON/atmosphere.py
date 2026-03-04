@@ -1186,6 +1186,8 @@ def add_bulk_component(P, T, X_param, N_species, N_sectors, N_zones,
                 X[2,:,j,k] = X_He
         
     # For any other choice of bulk species, the first mixing ratio is the bulk species
+    else:
+        
         if (len(bulk_species) > 1):
             raise Exception("Only a single species can be designated as bulk " +
                             "(besides models with H2 & He or H & He with a fixed He/H2 ratio).")
