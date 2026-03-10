@@ -1506,7 +1506,7 @@ def load_aerosol_grid(aerosol_species, grid = 'aerosol',
     
     # Open aerosol grid HDF5 file
     try:
-        database = h5py.File(input_file_path + 'opacity/'  + grid + '_database.hdf5', 'r')
+        database = h5py.File(input_file_path + '/opacity/'  + grid + '_database.hdf5', 'r')
     except:
         raise Exception('POSEIDON could not find ', input_file_path + 'opacity/'  + grid + '_database.hdf5. Is it downloaded and in the opacity folder?')
 
