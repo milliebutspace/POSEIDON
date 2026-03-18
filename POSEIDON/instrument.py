@@ -366,10 +366,20 @@ def make_model_data(spectrum, wl, sigma, sensitivity, bin_left, bin_cent,
         for n in range(N_bins):
             
             # Extend convolution beyond bin edge by max(1, 2 PSF std) model grid spaces (std rounded to integer)
-            extension = max(1, int(2 * sigma[n]))   
+            extension = max(1, int(2 * sigma[n]))
+
+            print(type(bin_right[n]), bin_right[n])
+            print(type(extension), extension)
+
+            left = int(np.floor(bin_left[n] - extension))
+            right = int(np.ceil(bin_right[n] + extension))
+
+            left = max(left, 0)
+            right = min(right, len(spectrum))
+  
             
             # Convolve spectrum with PSF width appropriate for a given bin 
-            spectrum_conv = gauss_conv(spectrum[(bin_left[n]-extension):(bin_right[n]+extension)], 
+            spectrum_conv = gauss_conv(spectrum[left:right], 
                                        sigma=sigma[n], mode='nearest')
 
             # Catch a (surprisingly common) error

@@ -166,7 +166,7 @@ def run_retrieval(planet, star, model, opac, data, priors, wl, P,
                                chemistry_grid, resume = resume, verbose = verbose,
                                outputfiles_basename = basename, 
                                n_live_points = N_live, multimodal = False,
-                               evidence_tolerance = ev_tol, log_zero = -1e90,
+                               evidence_tolerance = ev_tol, log_zero = -1e50,
                                importance_nested_sampling = False, 
                                sampling_efficiency = sampling_target, 
                                const_efficiency_mode = False)
